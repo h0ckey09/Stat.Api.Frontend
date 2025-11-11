@@ -80,6 +80,10 @@ var Auth = (function () {
         } catch (e) { /* ignore */ }
     }
 
+    function setLocalUser(user) {
+        _user = user || null;
+    }
+
     function loadTokensFromStorage() {
         try {
             var lt = sessionStorage.getItem(STORAGE_LOCAL_TOKEN);
@@ -124,6 +128,7 @@ var Auth = (function () {
             }
             console.log('[Auth] Local token stored');
             setLocalToken(local);
+            setLocalUser(data.user);
             return data; // Return the full response including user object
         }).catch(function (err) {
             console.error('[Auth] Exchange error:', err);
@@ -273,6 +278,21 @@ var Auth = (function () {
         });
     }
 
+    function validateAuth() {
+        // /api/v1/users/ValidateSession
+        if (!_localToken) { return Promise.resolve(false); }
+        return fetch(API_BASE_URL + '/api/v1/users/ValidateSession', {
+            headers: getAuthHeader()
+        }).then(async function (res) {
+            if (!res.ok) {
+                const data = await res.json();
+                setLocalUser(data.user);
+                return res.text().then(function (t) { throw new Error('HTTP ' + res.status + ': ' + t); });
+            }
+            return res.json();
+        });
+    }
+
     // Ensure init runs (sourceEditor already calls Auth.init())
     // Expose public API
     return {
@@ -284,6 +304,7 @@ var Auth = (function () {
         authPost: authPost,
         renderGoogleLogin: renderGoogleLogin,
         getLocalToken: function () { return _localToken; },
-        getUser: function () { return _user; }
+        getUser: function () { return _user; },
+        validateAuth: validateAuth
     };
 })();
