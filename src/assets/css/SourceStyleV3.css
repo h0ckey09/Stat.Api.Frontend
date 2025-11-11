@@ -1,0 +1,655 @@
+@import url("https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700");
+@import url("https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300");
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap");
+
+@font-face {
+    font-family: "Open-Sans";
+    src: url("/SilkUIFonts/fonts/OpenSans-Regular.eot");
+    src: url("/SilkUIFonts/fonts/OpenSans-Regular.eot?#iefix") format("embedded-opentype"),
+        url("/SilkUIFonts/fonts/OpenSans-Regular.woff") format("woff"),
+        url("/SilkUIFonts/fonts/OpenSans-Regular.ttf") format("truetype"),
+        url("/SilkUIFonts/fonts/OpenSans-Regular.svg#Open-Sans") format("svg");
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Open-Sans";
+    src: url("/SilkUIFonts/fonts/OpenSans-Bold.eot");
+    src: url("/SilkUIFonts/fonts/OpenSans-Bold.eot?#iefix") format("embedded-opentype"),
+        url("/SilkUIFonts/fonts/OpenSans-Bold.woff") format("woff"),
+        url("/SilkUIFonts/fonts/OpenSans-Bold.ttf") format("truetype"),
+        url("/SilkUIFonts/fonts/OpenSans-Bold.svg#Open-Sans") format("svg");
+    font-weight: 700;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Open-Sans";
+    src: url("/SilkUIFonts/fonts/OpenSans-Italic.eot");
+    src: url("/SilkUIFonts/fonts/OpenSans-Italic.eot?#iefix") format("embedded-opentype"),
+        url("/SilkUIFonts/fonts/OpenSans-Italic.woff") format("woff"),
+        url("/SilkUIFonts/fonts/OpenSans-Italic.ttf") format("truetype"),
+        url("/SilkUIFonts/fonts/OpenSans-Italic.svg#Open-Sans") format("svg");
+    font-weight: normal;
+    font-style: italic;
+}
+
+body {
+    font-family: Roboto, Open-Sans, Calibri;
+    font-size: 10pt;
+    background-color: white;
+    color: black;
+}
+
+.Header {
+    font-size: 12pt;
+}
+
+.PageBody {
+    width: 226mm;
+    margin-left: 5mm;
+    margin-right: 0mm;
+    padding-top: 2px;
+    overflow: hidden;
+}
+
+.pageStartFirst {
+    height: 300mm;
+}
+
+.pageStart {
+    page-break-before: always;
+    overflow: hidden;
+    height: 300mm;
+}
+
+.footerBar {
+    padding-top: 4px;
+    height: 5px;
+    width: 8in;
+    border-bottom: 1px solid #111111;
+}
+
+.footer {
+    color: #111111;
+}
+
+.VisitName {
+    font-weight: bold;
+    font-size: 10pt;
+}
+
+.SourceRow {
+    width: 100%;
+    margin-top: 0.3mm;
+    margin-bottom: 0.5mm;
+    display: table;
+    vertical-align: bottom;
+}
+
+.SourceRow .optional {
+    color: dimgray;
+    font-style: italic;
+}
+
+.SourceRow TD {
+    vertical-align: bottom;
+    align-content: left;
+    height: 5mm;
+}
+
+.cell_sectionHeader {
+    text-transform: uppercase;
+    margin: 1mm;
+    padding: 1mm;
+    font-size: 12pt;
+    font-weight: bold;
+}
+
+.cell_na {
+    display: table-cell;
+    background-color: #ffd41b;
+    border: solid #4e4e4e 1px;
+    border-radius: 5px;
+    padding: 0px 5px 0px 5px;
+    font-size: 7pt;
+    font-weight: bold;
+    color: black;
+    vertical-align: middle !important;
+    white-space: nowrap;
+}
+
+.cell_checkbox {
+    font-family: Tahoma;
+    color: black;
+    font-weight: bold;
+    font-size: 12pt;
+    width: 3mm;
+    max-width: 5mm;
+    padding-right: 0mm;
+    padding-top: 0mm;
+    padding-bottom: 0mm;
+    vertical-align: middle !important;
+    color: red;
+}
+
+.checkbox {
+    display: inline-block;
+    width: 2.75mm;
+    height: 2.75mm;
+    border: 2px solid black;
+    border-radius: 2px;
+    margin-right: 2mm;
+}
+
+.nocheckbox {
+    display: inline-block;
+    width: 2.5mm;
+    height: 2.5mm;
+    border: 2px solid transparent;
+    border-radius: 2px;
+    margin-right: 2mm;
+}
+
+.optionbox {
+    display: inline-block;
+    width: 2.5mm;
+    height: 2.5mm;
+    border: 2px solid black;
+    border-radius: 10px;
+}
+
+td .checkbox {
+    margin-right: 0mm;
+}
+
+.cell_noCheckbox {
+    width: 3mm;
+    max-width: 5mm;
+    padding-right: 1mm;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    padding-left: 0mm;
+}
+
+.cell_content {
+    align-content: left;
+    text-align: left;
+    display: table-cell;
+    padding-left: 1mm;
+    padding-right: 1mm;
+}
+
+.cell_label {
+    align-content: left;
+    text-align: left;
+    display: table-cell;
+    font-weight: bold;
+    padding-right: 1mm;
+    width: 100%;
+    padding-left: 3mm;
+}
+
+.cell_longUnderline {
+    border-bottom: 1px solid black;
+    width: 100%;
+}
+
+.cell_underline {
+    border-bottom: 1px solid black;
+    min-width: 15mm !important;
+    display: table-cell;
+    overflow: hidden;
+}
+
+.cell_mediumUnderline {
+    border-bottom: 1px solid black;
+    min-width: 25mm !important;
+    width: 25mm;
+    display: table-cell;
+    overflow: hidden;
+}
+
+.cell_shortUnderline {
+    border-bottom: 1px solid black;
+    min-width: 10mm !important;
+    width: 10mm;
+    display: table-cell;
+    overflow: hidden;
+}
+
+.cell_notesLine {
+    width: 100%;
+    padding-left: 3mm;
+    border-bottom-width: 1px;
+    height: 5mm !important;
+    border-bottom-style: dashed;
+    border-bottom-color: #999;
+}
+
+.cell_blankLine {
+    border: 0px;
+    width: 100%;
+    height: 10mm;
+}
+
+.cell_small {
+    width: 1mm;
+    padding-left: 1mm;
+    padding-right: 1mm;
+    align-content: right;
+    display: table-cell;
+    border-left: 1px dotted #e3e3e3;
+    white-space: nowrap;
+}
+
+.cell_content:first-child {
+    padding-left: 3mm;
+}
+
+.cell_seperator {
+    background-color: #ccc;
+    text-transform: uppercase;
+    padding-left: 1.7mm;
+    padding-top: 0.6mm;
+    padding-bottom: 0.6mm;
+    vertical-align: middle;
+    height: 6mm;
+    font-weight: bold;
+}
+
+.cell_singleInfoLine {
+    font-size: 9pt;
+    font-style: italic;
+    color: dimgray;
+    text-align: center;
+    height: 5mm;
+    background-color: aliceblue;
+}
+
+.SignatureRow .cell_small {
+    border-left-width: 0;
+}
+
+.DateRow .cell_small {
+    border-left-width: 0;
+}
+
+.DateRow .cell_longUnderline {
+    width: 88%;
+}
+
+.expand {
+    width: 100%;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.wrap {
+    white-space: normal !important;
+    width: 100% !important;
+}
+
+.nowrap {
+    text-wrap: nowrap;
+}
+
+.worksheetName {
+    display: inline-block;
+    background-color: #b5f0fb;
+    border: solid #4e4e4e 1px;
+    border-radius: 5px;
+    padding: 2px;
+    font-size: 7pt;
+    font-weight: bold;
+    margin-left: 2px;
+}
+
+.Bulleted-Cell {
+    vertical-align: middle !important;
+}
+
+.Numbered-Cell {
+    vertical-align: middle !important;
+    font-weight: bold;
+}
+
+.cell_na .checkbox {
+    background-color: white;
+    vertical-align: middle;
+}
+
+.continuation_arrow {
+    max-width: 30px;
+    width: 30px;
+    padding-right: 3mm;
+}
+
+.indent {
+    padding-left: 5mm;
+}
+
+.conversion::after {
+    content: "*";
+}
+
+.border {
+    border-bottom: 1px dotted #e3e3e3;
+}
+
+.multiselect {
+    display: inline-table;
+    margin-right: 3mm;
+}
+
+.multiselect td {
+    white-space: nowrap;
+    text-align: left;
+}
+
+.multiselect tr td:last-child {
+    width: 100%;
+}
+
+.blockHeader {
+    background: lightgray;
+    border-bottom: solid 1px #bbb;
+    justify-content: center;
+    text-align: center;
+    height: 9mm;
+    font-weight: bold;
+    padding: 2px;
+}
+
+.blockFooter {
+    font-size: 7pt;
+    font-style: italic;
+    color: dimgray;
+    text-align: center;
+    height: 5mm;
+    padding-top: 1mm;
+}
+
+.inputLine {
+    border-bottom: 1px solid black;
+    width: 60%;
+    min-width: 9mm;
+}
+
+.inputLineLabel {
+    padding-top: 3mm;
+    padding-bottom: 0;
+    vertical-align: bottom;
+    padding-left: 1mm;
+    text-align: left;
+    width: 20%;
+    font-size: 9pt;
+    white-space: nowrap;
+}
+
+.centered {
+    text-align: center;
+    justify-content: center;
+}
+
+.cellbuffer {
+    width: 5%;
+}
+
+.cell_block {
+    float: left;
+    width: 15%;
+    border: 1px solid dimgray;
+    padding: 3px;
+    margin: 1px;
+    height: 40mm;
+    min-height:40mm;
+    border-collapse: collapse;
+}
+
+.cell_block_x2 {
+    width: 20%;
+}
+
+.cell_block_x3 {
+    width: 25%;
+}
+
+.cell_block_x4 {
+    width: 30%;
+}
+
+.cell_block_x5 {
+    width: 35%;
+}
+
+.cell_block_x6 {
+    width: 40%;
+}
+
+.pageBreak {
+    page-break-before: always;
+    margin-bottom: 5mm;
+}
+
+.SignatureRow {
+    height: 12mm;
+    /* With margins, this is 2x */
+}
+
+.DateRow {}
+
+.DateRow TD {
+    height: inherit;
+}
+
+.DraftStamp {
+    position: absolute;
+    font-size: 2.5in;
+    color: #dddddd66;
+    top: 25%;
+    left: 10%;
+    display: block;
+    rotate: 45deg;
+}
+
+.showPageBorder {
+    position: absolute;
+    border-style: solid;
+    border-width: 2px;
+    border-color: #b61b1b;
+    width: 226mm;
+    height: 300mm;
+    top: 3mm;
+    z-index: -10000;
+    background-color: transparent;
+}
+
+.showPageBorder2 {
+    position: absolute;
+    border-style: solid;
+    border-width: 2px;
+    border-color: #b61b1b;
+    width: 226mm;
+    height: 300mm;
+    top: 301mm;
+    z-index: -10000;
+    background-color: transparent;
+}
+
+.headerFooterPreviewIFrame {
+    width: 226mm;
+    border: 0px;
+    height: auto;
+    max-height: 14mm;
+    background-color: transparent;
+    overflow: hidden;
+}
+
+.RescindedStamp {
+    background-color: transparent;
+    font-size: 100pt;
+    font-family: Calibri;
+    text-transform: uppercase;
+    color: #f9d2d2;
+    position: fixed;
+    top: 40mm;
+    left: 20mm;
+    height: 150mm;
+    width: 100mm;
+    z-index: -1000;
+    -webkit-transform: rotate(33deg);
+    -moz-transform: rotate(33deg);
+    -o-transform: rotate(33deg);
+}
+
+/* This is the footer HTML page body tag for source */
+.SourceFooterPage {
+    border-top: 1px solid black;
+    margin-top: 4mm;
+    font-family: Roboto, Open-Sans, Calibri;
+    font-size: 10pt;
+    color: #444;
+    width: 226mm;
+    margin-left: 5mm;
+    margin-right: 0mm;
+}
+
+.continuation_arrow {
+    min-width: 15px;
+    max-width: 15px;
+    width: 15px;
+}
+
+.indent_1 {
+    width: 3mm;
+    max-width: 3mm;
+    min-width: 3mm;
+}
+
+
+.multiselect td.cell_content {
+    width: 1mm;
+}
+
+.multiselect tr td:last-child {
+    width: 100% !important;
+}
+
+/*************/
+/* INPUT BLOCK v3 Styles */
+/*************/
+
+.cellBlock_newLine {
+    display: block;
+    width: 100%;
+    height: 1px;
+}
+
+.cellBlock_underline {
+    border-bottom: 1px solid black;
+    min-width: 15mm !important;
+    overflow: hidden;
+    min-height: 8mm;
+    flex-grow: 1;
+}
+
+.cellBlock_label {
+    text-align: left;
+    padding-right: 1mm;
+    padding-left: 1mm;
+}
+
+.subtle {
+    font-size: smaller;
+}
+
+.cellBlock_checkbox {}
+
+.cellBlock_body {
+    align-content: flex-end;
+    justify-content: flex-start;
+    align-items: flex-end;
+    display: flex;
+    justify-items: stretch;
+    grid-template-columns: auto auto auto;
+    gap: 3px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+@media print {
+    html {
+        height: 0;
+    }
+
+    .PageStart {
+        overflow: hidden;
+        height: auto;
+        page-break-after: always;
+    }
+
+    .PageStart:last-of-type {
+        page-break-after: avoid;
+        padding-bottom: 0;
+        margin-bottom: 0;
+    }
+}
+
+@media screen {
+    .PageBorders>.showPageBorder:nth-of-type(1) {
+        position: absolute;
+        border-style: solid;
+        border-width: 2px;
+        border-color: #b61b1b;
+        width: 226mm;
+        height: 300mm;
+        top: 3mm;
+        z-index: -10000;
+        background-color: transparent;
+    }
+
+    .PageBorders>.showPageBorder:nth-of-type(2) {
+        position: absolute;
+        border-style: solid;
+        border-width: 2px;
+        border-color: #b61b1b;
+        width: 226mm;
+        height: 300mm;
+        top: 310mm;
+        z-index: -10000;
+        background-color: transparent;
+    }
+
+    .PageBorders>.showPageBorder:nth-of-type(3) {
+        position: absolute;
+        border-style: solid;
+        border-width: 2px;
+        border-color: #b61b1b;
+        width: 226mm;
+        height: 300mm;
+        top: 615mm;
+        z-index: -10000;
+        background-color: transparent;
+    }
+
+    .PageBody>.PageStart:nth-of-type(2) {
+        top: 310mm !important;
+        position: absolute;
+        width: 226mm;
+    }
+
+    .PageBody>.PageStart:nth-of-type(3) {
+        top: 615mm !important;
+        position: absolute;
+        width: 226mm;
+    }
+
+    .showPageBorder2 {
+        display: none;
+    }
+}
