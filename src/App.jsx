@@ -3,6 +3,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import Login from './components/Login'
 import Dashboard from './components/Dashboard'
+import SourceBinders from './components/SourceBinders'
+import TempLogsImport from './components/TempLogsImport'
+import Layout from './components/Layout'
 import './App.css'
 
 // Protected Route component
@@ -19,7 +22,7 @@ const ProtectedRoute = ({ children }) => {
     );
   }
   
-  return isLoggedIn ? children : <Navigate to="/login" replace />;
+  return isLoggedIn ? <Layout>{children}</Layout> : <Navigate to="/login" replace />;
 };
 
 function AppContent() {
@@ -32,6 +35,22 @@ function AppContent() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/source-binders" 
+          element={
+            <ProtectedRoute>
+              <SourceBinders />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/temp-logs-import" 
+          element={
+            <ProtectedRoute>
+              <TempLogsImport />
             </ProtectedRoute>
           } 
         />
