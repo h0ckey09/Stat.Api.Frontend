@@ -11,6 +11,8 @@ import Dashboard from "./components/Dashboard";
 import SourceBinders from "./components/SourceBinders";
 import TempLogsImport from "./components/TempLogsImport";
 import DOA from "./components/DOA";
+import DOAVersions from "./components/DOAVersions";
+import DOAView from "./components/DOAView";
 import Layout from "./components/Layout";
 import "./App.css";
 
@@ -71,6 +73,22 @@ function AppContent() {
           element={
             <ProtectedRoute>
               <DOA />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/doa/:id"
+          element={
+            <ProtectedRoute>
+              <DOAVersions />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/doa/:id/view"
+          element={
+            <ProtectedRoute>
+              <DOAView />
             </ProtectedRoute>
           }
         />
