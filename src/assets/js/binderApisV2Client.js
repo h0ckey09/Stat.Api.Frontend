@@ -143,6 +143,22 @@ var BinderApisV2Client = (function ($) {
         return postJson('/UpdateBinderName', payload, ajaxOptions);
     }
 
+    function unarchiveBinder(binderId, payload, ajaxOptions) {
+        return postJson('/UnarchiveBinder/' + encodeURIComponent(binderId), payload, ajaxOptions, 20000);
+    }
+
+    function getBinderPagesIdList(binderId, ajaxOptions) {
+        return getJson('/GetBinderPagesIdList/' + encodeURIComponent(binderId), null, ajaxOptions);
+    }
+
+    function getCurrentUserBinderPermission(binderId, ajaxOptions) {
+        return getJson('/GetCurrentUserBinderPermission/' + encodeURIComponent(binderId), null, ajaxOptions);
+    }
+
+    function getUserBinderPermission(binderId, userId, ajaxOptions) {
+        return getJson('/GetUserBinderPermission/' + encodeURIComponent(binderId) + '/user/' + encodeURIComponent(userId), null, ajaxOptions);
+    }
+
     return {
         createNewSourceBinderFreeStanding: createNewSourceBinderFreeStanding,
         createNewSourceBinderWithStudy: createNewSourceBinderWithStudy,
@@ -152,11 +168,15 @@ var BinderApisV2Client = (function ($) {
         listBinders: listBinders,
         getBinderPages: getBinderPages,
         archiveBinder: archiveBinder,
+        unarchiveBinder: unarchiveBinder,
         removeUserFromBinder: removeUserFromBinder,
         addUserToBinder: addUserToBinder,
         setBinderOwner: setBinderOwner,
         updateBinderProtocolInfo: updateBinderProtocolInfo,
         updateBinderDescription: updateBinderDescription,
-        updateBinderName: updateBinderName
+        updateBinderName: updateBinderName,
+        getBinderPagesIdList: getBinderPagesIdList,
+        getCurrentUserBinderPermission: getCurrentUserBinderPermission,
+        getUserBinderPermission: getUserBinderPermission
     };
 })(jQuery);
