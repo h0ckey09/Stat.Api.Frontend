@@ -11,9 +11,9 @@ var Auth = (function () {
         // If we're on localhost:5500 (VS Code Live Server), point to the API server
         if (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') {
             // Check if we're on a non-standard port (like 5500 for Live Server)
-            if (window.location.port && window.location.port !== '3000' && window.location.port !== '3001') {
-                return 'http://localhost:3001'; // Default API server port
-            }
+
+            return 'http://localhost:3001'; // Default API server port
+
         }
         // Otherwise use relative paths (same origin)
         return '';
@@ -50,6 +50,7 @@ var Auth = (function () {
             s.src = 'https://accounts.google.com/gsi/client';
             s.async = true;
             s.defer = true;
+
             s.onload = function () { _gsiLoaded = true; resolve(); };
             s.onerror = function (e) { reject(e || new Error('Failed to load Google GSI')); };
             document.head.appendChild(s);
@@ -169,10 +170,20 @@ var Auth = (function () {
             if (!(window.google && window.google.accounts && window.google.accounts.id)) {
                 throw new Error('Google GSI failed to load');
             }
+            console.log('[Auth] ===== DEBUGGING GOOGLE SIGN-IN =====');
+            console.log('[Auth] CLIENT_ID:', CLIENT_ID);
+            console.log('[Auth] window.location.origin:', window.location.origin);
+            console.log('[Auth] window.location.href:', window.location.href);
+            console.log('[Auth] window.location.hostname:', window.location.hostname);
+            console.log('[Auth] window.location.port:', window.location.port);
+            console.log('[Auth] About to call google.accounts.id.initialize()');
             google.accounts.id.initialize({
                 client_id: CLIENT_ID,
-                callback: handleCredentialResponse
+                callback: handleCredentialResponse,
+                use_fedcm_for_prompt: false,  // Disable FedCM
+                cancel_on_tap_outside: false
             });
+            console.log('[Auth] Google Sign-In initialized successfully');
             _gsiInitialized = true;
         }).catch(function (e) {
             console.error('Auth.init failed', e);
@@ -304,7 +315,13 @@ var Auth = (function () {
         authPost: authPost,
         renderGoogleLogin: renderGoogleLogin,
         getLocalToken: function () { return _localToken; },
-        getUser: function () { return _user; },
+        getUser: async function () {
+            if (!_user && _localToken) { /* try to decode from token? */
+                await validateAuth();
+                return _user;
+            }
+            return _user;
+        },
         validateAuth: validateAuth
     };
 })();

@@ -1,50 +1,53 @@
-import React, { useState, useEffect } from 'react';
-import studiesService from '../services/studiesService';
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import studiesService from "../services/studiesService";
 
 // Mock data for demo purposes when API is not available
 const MOCK_STUDIES = [
   {
-    id: 'STUDY-001',
-    name: 'Clinical Trial Phase III',
-    description: 'A randomized, double-blind study evaluating treatment efficacy',
-    protocolNumber: 'PROTO-2024-001',
-    sponsor: 'Research Institute',
-    status: 'active',
+    id: "STUDY-001",
+    name: "Clinical Trial Phase III",
+    description:
+      "A randomized, double-blind study evaluating treatment efficacy",
+    protocolNumber: "PROTO-2024-001",
+    sponsor: "Research Institute",
+    status: "active",
     owner: {
-      id: 'user1',
-      name: 'Dr. Sarah Johnson',
-      email: 'sarah.johnson@example.com'
+      id: "user1",
+      name: "Dr. Sarah Johnson",
+      email: "sarah.johnson@example.com",
     },
-    updatedAt: '2024-01-15T10:30:00Z'
+    updatedAt: "2024-01-15T10:30:00Z",
   },
   {
-    id: 'STUDY-002',
-    name: 'Observational Study - Cardiovascular',
-    description: 'Long-term observational study on cardiovascular outcomes',
-    protocolNumber: 'PROTO-2024-002',
-    sponsor: 'Heart Health Foundation',
-    status: 'active',
+    id: "STUDY-002",
+    name: "Observational Study - Cardiovascular",
+    description: "Long-term observational study on cardiovascular outcomes",
+    protocolNumber: "PROTO-2024-002",
+    sponsor: "Heart Health Foundation",
+    status: "active",
     owner: {
-      id: 'user2',
-      name: 'Dr. Michael Chen',
-      email: 'michael.chen@example.com'
+      id: "user2",
+      name: "Dr. Michael Chen",
+      email: "michael.chen@example.com",
     },
-    updatedAt: '2024-02-20T14:45:00Z'
+    updatedAt: "2024-02-20T14:45:00Z",
   },
   {
-    id: 'STUDY-003',
-    name: 'Pediatric Vaccine Trial',
-    description: 'Safety and efficacy study of new pediatric vaccine formulation',
-    protocolNumber: 'PROTO-2024-003',
-    sponsor: 'Vaccine Research Group',
-    status: 'active',
+    id: "STUDY-003",
+    name: "Pediatric Vaccine Trial",
+    description:
+      "Safety and efficacy study of new pediatric vaccine formulation",
+    protocolNumber: "PROTO-2024-003",
+    sponsor: "Vaccine Research Group",
+    status: "active",
     owner: {
-      id: 'user3',
-      name: 'Dr. Emily Rodriguez',
-      email: 'emily.rodriguez@example.com'
+      id: "user3",
+      name: "Dr. Emily Rodriguez",
+      email: "emily.rodriguez@example.com",
     },
-    updatedAt: '2024-03-01T09:15:00Z'
-  }
+    updatedAt: "2024-03-01T09:15:00Z",
+  },
 ];
 
 /**
@@ -52,6 +55,7 @@ const MOCK_STUDIES = [
  * First screen: Table of all active studies
  */
 function DOA() {
+  const navigate = useNavigate();
   const [studies, setStudies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -69,8 +73,10 @@ function DOA() {
       setStudies(response.data.studies || []);
       setUseDemoMode(false);
     } catch (err) {
-      console.error('Error loading active studies:', err);
-      setError(err.response?.data?.message || err.message || 'Failed to load studies');
+      console.error("Error loading active studies:", err);
+      setError(
+        err.response?.data?.message || err.message || "Failed to load studies"
+      );
     } finally {
       setLoading(false);
     }
@@ -83,8 +89,7 @@ function DOA() {
   };
 
   const handleStudyClick = (studyId) => {
-    // TODO: Navigate to DOA details for the selected study
-    console.log('Selected study:', studyId);
+    navigate(`/doa/${studyId}`);
   };
 
   if (loading) {
@@ -125,10 +130,13 @@ function DOA() {
       <div className="row mb-4">
         <div className="col">
           <h2>Delegation of Authority (DOA)</h2>
-          <p className="text-muted">Select a study to manage its delegation of authority</p>
+          <p className="text-muted">
+            Select a study to manage its delegation of authority
+          </p>
           {useDemoMode && (
             <div className="alert alert-warning" role="alert">
-              <strong>Demo Mode:</strong> Showing sample data. Connect to API server to see real studies.
+              <strong>Demo Mode:</strong> Showing sample data. Connect to API
+              server to see real studies.
             </div>
           )}
         </div>
@@ -153,10 +161,10 @@ function DOA() {
                       <tr>
                         <th>Study ID</th>
                         <th>Name</th>
-                        <th>Description</th>
                         <th>Protocol Number</th>
-                        <th>Owner</th>
-                        <th>Last Updated</th>
+                        <th>PI</th>
+                        <th>Sponsor</th>
+                        <th>DOA Versions</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -167,38 +175,35 @@ function DOA() {
                             <code>{study.id}</code>
                           </td>
                           <td>
-                            <strong>{study.name}</strong>
+                            <strong>{study.StudyName}</strong>
                           </td>
+
+                          <td>{study.ProtocolNumberOfficial || "-"}</td>
                           <td>
-                            {study.description ? (
-                              <span className="text-truncate d-inline-block" style={{ maxWidth: '300px' }}>
-                                {study.description}
-                              </span>
-                            ) : (
-                              <span className="text-muted fst-italic">No description</span>
-                            )}
-                          </td>
-                          <td>{study.protocolNumber || '-'}</td>
-                          <td>
-                            {study.owner ? (
+                            {study.Investigators ? (
                               <div>
-                                <div>{study.owner.name}</div>
-                                <small className="text-muted">{study.owner.email}</small>
+                                <div>
+                                  Dr. {study.Investigators.LastName}
+                                </div>
                               </div>
                             ) : (
-                              '-'
+                              "-"
                             )}
                           </td>
                           <td>
-                            {study.updatedAt
-                              ? new Date(study.updatedAt).toLocaleDateString()
-                              : '-'}
+                            {study.Sponsors ? (
+                              <div>
+                                <div>{study.Sponsors.Name}</div>
+                              </div>
+                            ) : (
+                              "-"
+                            )}
                           </td>
+                          <td>{study.STUDY_DOA_Versions.length}</td>
                           <td>
                             <button
                               className="btn btn-sm btn-primary"
-                              onClick={() => handleStudyClick(study.id)}
-                            >
+                              onClick={() => handleStudyClick(study.id)}>
                               Manage DOA
                             </button>
                           </td>
@@ -216,8 +221,9 @@ function DOA() {
       <div className="row mt-4">
         <div className="col">
           <div className="alert alert-info" role="alert">
-            <strong>Note:</strong> This table shows only active studies. Click "Manage DOA" to view 
-            and modify delegation of authority settings for a specific study.
+            <strong>Note:</strong> This table shows only active studies. Click
+            "Manage DOA" to view and modify delegation of authority settings for
+            a specific study.
           </div>
         </div>
       </div>

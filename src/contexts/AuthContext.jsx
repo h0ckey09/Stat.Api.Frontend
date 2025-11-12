@@ -1,11 +1,11 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from "react";
 
 const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
       if (window.Auth) {
         setAuthModule(window.Auth);
         await window.Auth.init();
-        
+
         // Check if already logged in
         if (window.Auth.isLoggedIn()) {
           const currentUser = window.Auth.getUser();
@@ -41,23 +41,24 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-    window.addEventListener('authStateChanged', handleAuthStateChange);
-    return () => window.removeEventListener('authStateChanged', handleAuthStateChange);
+    window.addEventListener("authStateChanged", handleAuthStateChange);
+    return () =>
+      window.removeEventListener("authStateChanged", handleAuthStateChange);
   }, []);
 
   const login = async () => {
     try {
       if (!authModule) {
-        throw new Error('Auth module not initialized');
+        throw new Error("Auth module not initialized");
       }
       const userData = await authModule.login();
       setUser(userData);
       return { success: true };
     } catch (error) {
-      console.error('Login failed:', error);
-      return { 
-        success: false, 
-        error: error.message || 'Login failed' 
+      console.error("Login failed:", error);
+      return {
+        success: false,
+        error: error.message || "Login failed",
       };
     }
   };
@@ -75,7 +76,7 @@ export const AuthProvider = ({ children }) => {
       await authModule.validateAuth();
       return true;
     } catch (error) {
-      console.error('Auth validation failed:', error);
+      console.error("Auth validation failed:", error);
       return false;
     }
   };
@@ -85,14 +86,10 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     loading,
-    isLoggedIn: authModule ? authModule.isLoggedIn() : false,
+    isLoggedIn: !!user,
     validateAuth,
-    authModule
+    authModule,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

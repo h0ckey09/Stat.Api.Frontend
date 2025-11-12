@@ -5,7 +5,19 @@ import api from './apiService';
  * Modern React/Axios-based client for Studies endpoints
  */
 
-const STUDIES_BASE_PATH = '/api/v1/studies';
+// Endpoints - auto-detect API server or use configured base
+var API_BASE_URL = (function () {
+  // If we're on localhost:5500 (VS Code Live Server), point to the API server
+  if (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') {
+    // Check if we're on a non-standard port (like 5500 for Live Server)
+
+    return 'http://localhost:3001'; // Default API server port
+
+  }
+  // Otherwise use relative paths (same origin)
+  return '';
+})();
+const STUDIES_BASE_PATH = `${API_BASE_URL}/api/v1/studies`;
 
 export const studiesService = {
   /**
@@ -22,7 +34,7 @@ export const studiesService = {
    * @returns {Promise}
    */
   getActiveStudies: () => {
-    return api.get(`${STUDIES_BASE_PATH}/GetActiveStudies`);
+    return api.get(`${STUDIES_BASE_PATH}/ListActiveStudies`);
   },
 
   /**

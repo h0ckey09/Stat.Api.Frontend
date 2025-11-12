@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 const Layout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -9,7 +9,7 @@ const Layout = ({ children }) => {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/login');
+    navigate("/login");
   };
 
   const toggleSidebar = () => {
@@ -29,8 +29,7 @@ const Layout = ({ children }) => {
             className="btn btn-outline-light me-3"
             type="button"
             onClick={toggleSidebar}
-            aria-label="Toggle navigation"
-          >
+            aria-label="Toggle navigation">
             <span className="navbar-toggler-icon"></span>
           </button>
           <Link className="navbar-brand" to="/dashboard">
@@ -39,7 +38,7 @@ const Layout = ({ children }) => {
           <div className="ms-auto d-flex align-items-center">
             {user && (
               <span className="text-light me-3">
-                {user.name || user.email || 'User'}
+                {user.name || user.email || "User"}
               </span>
             )}
             <button onClick={handleLogout} className="btn btn-outline-light">
@@ -56,51 +55,50 @@ const Layout = ({ children }) => {
           <div
             className="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-50"
             style={{ zIndex: 1040 }}
-            onClick={closeSidebar}
-          ></div>
+            onClick={closeSidebar}></div>
         )}
 
         {/* Slide-out Sidebar */}
         <div
           className={`bg-light border-end position-absolute h-100 ${
-            sidebarOpen ? 'translate-x-0' : 'translate-x-n100'
+            sidebarOpen ? "translate-x-0" : "translate-x-n100"
           }`}
           style={{
-            width: '250px',
-            transition: 'transform 0.3s ease-in-out',
-            transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+            width: "250px",
+            transition: "transform 0.3s ease-in-out",
+            transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
             zIndex: 1050,
-          }}
-        >
+          }}>
           <div className="list-group list-group-flush">
             <Link
               to="/dashboard"
               className="list-group-item list-group-item-action"
-              onClick={closeSidebar}
-            >
+              onClick={closeSidebar}>
               Dashboard
             </Link>
             <Link
               to="/source-binders"
               className="list-group-item list-group-item-action"
-              onClick={closeSidebar}
-            >
+              onClick={closeSidebar}>
               Source Binders
             </Link>
             <Link
               to="/temp-logs-import"
               className="list-group-item list-group-item-action"
-              onClick={closeSidebar}
-            >
+              onClick={closeSidebar}>
               Temp Logs Import
+            </Link>
+            <Link
+              to="/doa"
+              className="list-group-item list-group-item-action"
+              onClick={closeSidebar}>
+              DOA
             </Link>
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="flex-grow-1 overflow-auto">
-          {children}
-        </div>
+        <div className="flex-grow-1 overflow-auto">{children}</div>
       </div>
     </div>
   );
