@@ -1,6 +1,52 @@
 import React, { useState, useEffect } from 'react';
 import studiesService from '../services/studiesService';
 
+// Mock data for demo purposes when API is not available
+const MOCK_STUDIES = [
+  {
+    id: 'STUDY-001',
+    name: 'Clinical Trial Phase III',
+    description: 'A randomized, double-blind study evaluating treatment efficacy',
+    protocolNumber: 'PROTO-2024-001',
+    sponsor: 'Research Institute',
+    status: 'active',
+    owner: {
+      id: 'user1',
+      name: 'Dr. Sarah Johnson',
+      email: 'sarah.johnson@example.com'
+    },
+    updatedAt: '2024-01-15T10:30:00Z'
+  },
+  {
+    id: 'STUDY-002',
+    name: 'Observational Study - Cardiovascular',
+    description: 'Long-term observational study on cardiovascular outcomes',
+    protocolNumber: 'PROTO-2024-002',
+    sponsor: 'Heart Health Foundation',
+    status: 'active',
+    owner: {
+      id: 'user2',
+      name: 'Dr. Michael Chen',
+      email: 'michael.chen@example.com'
+    },
+    updatedAt: '2024-02-20T14:45:00Z'
+  },
+  {
+    id: 'STUDY-003',
+    name: 'Pediatric Vaccine Trial',
+    description: 'Safety and efficacy study of new pediatric vaccine formulation',
+    protocolNumber: 'PROTO-2024-003',
+    sponsor: 'Vaccine Research Group',
+    status: 'active',
+    owner: {
+      id: 'user3',
+      name: 'Dr. Emily Rodriguez',
+      email: 'emily.rodriguez@example.com'
+    },
+    updatedAt: '2024-03-01T09:15:00Z'
+  }
+];
+
 /**
  * DOA (Delegation of Authority) Component
  * First screen: Table of all active studies
@@ -9,6 +55,7 @@ function DOA() {
   const [studies, setStudies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [useDemoMode, setUseDemoMode] = useState(false);
 
   useEffect(() => {
     loadActiveStudies();
@@ -20,12 +67,19 @@ function DOA() {
       setError(null);
       const response = await studiesService.getActiveStudies();
       setStudies(response.data.studies || []);
+      setUseDemoMode(false);
     } catch (err) {
       console.error('Error loading active studies:', err);
       setError(err.response?.data?.message || err.message || 'Failed to load studies');
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadDemoData = () => {
+    setStudies(MOCK_STUDIES);
+    setError(null);
+    setUseDemoMode(true);
   };
 
   const handleStudyClick = (studyId) => {
@@ -53,9 +107,14 @@ function DOA() {
           <h4 className="alert-heading">Error Loading Studies</h4>
           <p>{error}</p>
           <hr />
-          <button className="btn btn-danger" onClick={loadActiveStudies}>
-            Retry
-          </button>
+          <div className="d-flex gap-2">
+            <button className="btn btn-danger" onClick={loadActiveStudies}>
+              Retry
+            </button>
+            <button className="btn btn-secondary" onClick={loadDemoData}>
+              Load Demo Data
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -67,6 +126,11 @@ function DOA() {
         <div className="col">
           <h2>Delegation of Authority (DOA)</h2>
           <p className="text-muted">Select a study to manage its delegation of authority</p>
+          {useDemoMode && (
+            <div className="alert alert-warning" role="alert">
+              <strong>Demo Mode:</strong> Showing sample data. Connect to API server to see real studies.
+            </div>
+          )}
         </div>
       </div>
 
