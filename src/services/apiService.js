@@ -14,7 +14,11 @@ const api = axios.create({
 // Add request interceptor to include auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('authToken');
+    // Check for tokens in both sessionStorage and localStorage
+    const sessionToken = sessionStorage.getItem('statSessionToken');
+    const localToken = localStorage.getItem('authToken');
+    
+    const token = sessionToken || localToken;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -30,9 +34,20 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Handle unauthorized access
+      console.warn('🚨 API returned 401 - authentication failed');
+      
+      // Dispatch global auth error event
+      const authErrorEvent = new CustomEvent('authError', {
+        detail: { 
+          message: 'Authentication failed', 
+          error: error.response.data 
+        }
+      });
+      window.dispatchEvent(authErrorEvent);
+      
+      // Clear tokens
       localStorage.removeItem('authToken');
-      window.location.href = '/login';
+      sessionStorage.removeItem('statSessionToken');
     }
     return Promise.reject(error);
   }

@@ -1,7 +1,7 @@
 import React from 'react';
 import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext.jsx';
 
 const Navbar = () => {
   const { logout } = useAuth();
@@ -21,6 +21,9 @@ const Navbar = () => {
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button color="inherit" onClick={() => navigate('/dashboard')}>
             Dashboard
+          </Button>
+          <Button color="inherit" onClick={() => navigate('/source-binders')}>
+            Source Binders
           </Button>
           <Button color="inherit" onClick={() => navigate('/api-explorer')}>
             API Explorer

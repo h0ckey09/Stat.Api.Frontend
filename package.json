@@ -4,7 +4,7 @@
   "description": "A simple frontend (temporary until Helix is done) for accessing some of the UI components of the API server.",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 5500",
     "build": "vite build",
     "preview": "vite preview"
   },
@@ -12,9 +12,15 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^7.3.5",
+    "@mui/material": "^7.3.5",
+    "axios": "^1.13.2",
     "bootstrap": "^5.3.8",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.6"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^5.1.0",

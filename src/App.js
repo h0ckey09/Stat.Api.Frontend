@@ -6,6 +6,7 @@ import Navbar from './components/Navbar';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import ApiExplorer from './components/ApiExplorer';
+import { SourceBinderList } from './features/source_binder';
 
 function App() {
   const { user } = useAuth();
@@ -22,6 +23,10 @@ function App() {
           <Route 
             path="/dashboard" 
             element={user ? <Dashboard /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/source-binders" 
+            element={user ? <SourceBinderList /> : <Navigate to="/login" />} 
           />
           <Route 
             path="/api-explorer" 
