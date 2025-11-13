@@ -64,6 +64,23 @@ function DOAVersions() {
     navigate("/doa");
   };
 
+  const handleAddNewDOA = async () => {
+    try {
+      const response = await doaService.getEditableDoa(id);
+      const versionNumber = response.data.versionNumber;
+      if (versionNumber) {
+        navigate(`/doa/${id}/version/${versionNumber}`);
+      } else {
+        alert("Unable to get version number from the server response.");
+      }
+    } catch (err) {
+      console.error("Error creating new DOA:", err);
+      alert(
+        err.response?.data?.message || err.message || "Failed to create new DOA version"
+      );
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mt-5">
@@ -105,6 +122,14 @@ function DOAVersions() {
               Study: <strong>{study.StudyName}</strong> ({study.id})
             </p>
           )}
+        </div>
+        <div className="col-auto d-flex align-items-start">
+          <button 
+            className="btn btn-primary mt-3" 
+            onClick={handleAddNewDOA}
+          >
+            Add New DOA
+          </button>
         </div>
       </div>
 

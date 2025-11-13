@@ -13,6 +13,7 @@ import TempLogsImport from "./components/TempLogsImport";
 import DOA from "./components/DOA";
 import DOAVersions from "./components/DOAVersions";
 import DOAView from "./components/DOAView";
+import DOAVersion from "./components/DOAVersion";
 import Layout from "./components/Layout";
 import "./App.css";
 
@@ -89,6 +90,14 @@ function AppContent() {
           element={
             <ProtectedRoute>
               <DOAView />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/doa/:id/version/:versionNumber"
+          element={
+            <ProtectedRoute>
+              <DOAVersion />
             </ProtectedRoute>
           }
         />

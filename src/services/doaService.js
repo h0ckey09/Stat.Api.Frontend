@@ -82,6 +82,15 @@ export const doaService = {
   },
 
   /**
+   * Get editable DOA for a study
+   * @param {string} studyId - The study identifier
+   * @returns {Promise}
+   */
+  getEditableDoa: (studyId) => {
+    return api.get(`${DOA_BASE_PATH}/GetEditableDoa/${encodeURIComponent(studyId)}`);
+  },
+
+  /**
    * Remove user from DOA
    * @param {object} data - Object with userId and doaId
    * @returns {Promise}
