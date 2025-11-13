@@ -43,7 +43,7 @@ export const studiesService = {
    * @returns {Promise}
    */
   getStudy: (studyId) => {
-    return api.get(`${STUDIES_BASE_PATH}/GetStudy/${encodeURIComponent(studyId)}`);
+    return api.get(`${STUDIES_BASE_PATH}/study/${encodeURIComponent(studyId)}`);
   },
 
   /**

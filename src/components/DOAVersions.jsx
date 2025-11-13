@@ -26,10 +26,10 @@ function DOAVersions() {
       
       // Load study details to get study name and DOA versions
       const studyResponse = await studiesService.getStudy(id);
-      setStudy(studyResponse.data.study);
+      setStudy(studyResponse.data);
       
       // Get DOA versions from the study data
-      const doaVersions = studyResponse.data.study.STUDY_DOA_Versions || [];
+      const doaVersions = studyResponse.data.STUDY_DOA_Versions || [];
       
       // Sort versions in reverse chronological order (newest first)
       const sortedVersions = [...doaVersions].sort((a, b) => {
