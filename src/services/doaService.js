@@ -177,6 +177,42 @@ export const doaService = {
       console.error('Error downloading change-only DOA PDF:', error);
       throw error;
     }
+  },
+
+  /**
+   * Get all standard tasks
+   * @returns {Promise}
+   */
+  getStandardTasks: () => {
+    return api.get(`${DOA_BASE_PATH}/getStandardTasks`);
+  },
+
+  /**
+   * Update a standard task
+   * @param {string} id - The standard task identifier
+   * @param {object} data - Task update data
+   * @returns {Promise}
+   */
+  updateStandardTask: (id, data) => {
+    return api.post(`${DOA_BASE_PATH}/updateStandardTask/${encodeURIComponent(id)}`, data);
+  },
+
+  /**
+   * Archive a standard task
+   * @param {string} id - The standard task identifier
+   * @returns {Promise}
+   */
+  archiveStandardTask: (id) => {
+    return api.post(`${DOA_BASE_PATH}/archiveStandardTask/${encodeURIComponent(id)}`);
+  },
+
+  /**
+   * Create a new standard task
+   * @param {object} data - New task data
+   * @returns {Promise}
+   */
+  newStandardTask: (data) => {
+    return api.post(`${DOA_BASE_PATH}/newStandardTask`, data);
   }
 };
 
