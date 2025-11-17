@@ -1,42 +1,142 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import studiesService from "../services/studiesService";
 import doaService from "../services/doaService";
 
-/**
- * DOAVersions Component
- * Displays a table of DOA versions for a specific study in reverse chronological order
- */
+const formatDate = (value) => {
+  if (!value) return "-";
+  return new Date(value).toLocaleDateString();
+};
+
+const getVersionIdentifier = (version) => {
+  return (
+    version?.versionNumber ??
+    version?.version ??
+    version?.Version ??
+    version?.id ??
+    version?.Id ??
+    "-"
+  );
+};
+
+const resolveStudyName = (study) => {
+  return (
+    study?.studyName ??
+    study?.StudyName ??
+    study?.name ??
+    study?.Study_Title ??
+    "Study"
+  );
+};
+
+const buildStudyTasks = (record, versions) => {
+  if (!record) return [];
+  const versionList = versions || [];
+  const tasks = new Map();
+
+  versionList.forEach((version) => {
+    const versionLabel = getVersionIdentifier(version);
+    const tasksFromVersion =
+      version?.taskCodes ??
+      version?.TaskCodes ??
+      (version?.entries
+        ? version.entries
+            .map((entry) => entry?.task)
+            .filter((task) => !!task)
+        : []);
+
+    tasksFromVersion.forEach((task, index) => {
+      const code =
+        task?.code ??
+        task?.Code ??
+        task?.taskCode ??
+        task?.TaskCode ??
+        `task-${index}`;
+      const title =
+        task?.title ?? task?.Title ?? task?.name ?? task?.Name ?? "Untitled";
+      const description =
+        task?.description ?? task?.Description ?? task?.details ?? "";
+      const key = code || `${title}-${index}`;
+      const existing = tasks.get(key) ?? {
+        code,
+        title,
+        description,
+        versions: new Set(),
+      };
+      existing.versions.add(versionLabel);
+      tasks.set(key, existing);
+    });
+  });
+
+  return Array.from(tasks.values()).map((task) => ({
+    ...task,
+    versions: Array.from(task.versions),
+  }));
+};
+
 function DOAVersions() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [study, setStudy] = useState(null);
   const [versions, setVersions] = useState([]);
+  const [currentVersion, setCurrentVersion] = useState(null);
+  const [pendingVersion, setPendingVersion] = useState(null);
+  const [record, setRecord] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    loadStudyAndVersions();
+    if (id) {
+      loadStudyAndVersions();
+    }
   }, [id]);
+
+  const studyTasks = useMemo(() => buildStudyTasks(record, versions), [
+    record,
+    versions,
+  ]);
 
   const loadStudyAndVersions = async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      // Load study details to get study name and DOA versions
-      const studyResponse = await studiesService.getStudy(id);
-      setStudy(studyResponse.data);
-      
-      // Get DOA versions from the study data
-      const doaVersions = studyResponse.data.STUDY_DOA_Versions || [];
-      
-      // Sort versions in reverse chronological order (newest first)
-      const sortedVersions = [...doaVersions].sort((a, b) => {
-        return new Date(b.createdAt || b.UpdatedAt) - new Date(a.createdAt || a.UpdatedAt);
+      const response = await doaService.getStudyDoa(id);
+      const payload = response.data || {};
+      setRecord(payload);
+      setStudy(
+        payload.studyInfo ??
+          payload.StudyInfo ??
+          payload.study ??
+          payload.Study ??
+          null
+      );
+      const rawVersions =
+        payload.versions ??
+        payload.Versions ??
+        payload.DoaVersions ??
+        payload.doaVersions ??
+        [];
+      const sortedVersions = [...rawVersions].sort((a, b) => {
+        const aValue = Number(
+          a?.versionNumber ?? a?.version ?? a?.Version ?? a?.id ?? 0
+        );
+        const bValue = Number(
+          b?.versionNumber ?? b?.version ?? b?.Version ?? b?.id ?? 0
+        );
+        return bValue - aValue;
       });
-      
       setVersions(sortedVersions);
+      setCurrentVersion(
+        payload.currentVersion ??
+          payload.CurrentVersion ??
+          payload.current ??
+          null
+      );
+      setPendingVersion(
+        payload.pendingVersion ??
+          payload.PendingVersion ??
+          payload.pending ??
+          null
+      );
     } catch (err) {
       console.error("Error loading study and DOA versions:", err);
       setError(
@@ -47,38 +147,27 @@ function DOAVersions() {
     }
   };
 
-  const handleView = (versionId) => {
-    navigate(`/doa/${id}/view`);
+  const handleViewVersion = (version) => {
+    const versionLabel = getVersionIdentifier(version);
+    navigate(`/doa/${id}/version/${encodeURIComponent(versionLabel)}`);
   };
 
-  const handleDownloadPDF = async (versionId) => {
+  const handleDownloadVersionPDF = async (version) => {
+    const versionLabel = getVersionIdentifier(version);
     try {
-      await doaService.downloadCompiledDoaLogPdf(id, { version: versionId });
+      await doaService.downloadCompiledDoaLogPdf(id, { version: versionLabel });
     } catch (err) {
       console.error("Error downloading PDF:", err);
       alert("Failed to download PDF. This feature may not be implemented yet.");
     }
   };
 
-  const handleBack = () => {
-    navigate("/doa");
+  const handleViewDelegatedUsers = () => {
+    navigate(`/doa/${id}/view`);
   };
 
-  const handleAddNewDOA = async () => {
-    try {
-      const response = await doaService.getEditableDoa(id);
-      const versionNumber = response.data.versionNumber;
-      if (versionNumber) {
-        navigate(`/doa/${id}/version/${versionNumber}`);
-      } else {
-        alert("Unable to get version number from the server response.");
-      }
-    } catch (err) {
-      console.error("Error creating new DOA:", err);
-      alert(
-        err.response?.data?.message || err.message || "Failed to create new DOA version"
-      );
-    }
+  const handleBack = () => {
+    navigate("/doa");
   };
 
   if (loading) {
@@ -114,21 +203,30 @@ function DOAVersions() {
       <div className="row mb-3">
         <div className="col">
           <button className="btn btn-secondary mb-3" onClick={handleBack}>
-            ← Back to Studies
+            🡠 Back to Studies
           </button>
           <h2>DOA Versions</h2>
-          {study && (
-            <p className="text-muted">
-              Study: <strong>{study.StudyName}</strong> ({study.id})
-            </p>
+          <p className="text-muted">
+            Study: <strong>{resolveStudyName(study)}</strong> ({id})
+          </p>
+          {(currentVersion || pendingVersion) && (
+            <div className="d-flex flex-wrap gap-2 mb-2">
+              {currentVersion && (
+                <span className="badge bg-success">
+                  Current: v{getVersionIdentifier(currentVersion)}
+                </span>
+              )}
+              {pendingVersion && (
+                <span className="badge bg-warning text-dark">
+                  Pending: v{getVersionIdentifier(pendingVersion)}
+                </span>
+              )}
+            </div>
           )}
         </div>
-        <div className="col-auto d-flex align-items-start">
-          <button 
-            className="btn btn-primary mt-3" 
-            onClick={handleAddNewDOA}
-          >
-            Add New DOA
+        <div className="col-auto d-flex flex-column gap-2">
+          <button className="btn btn-outline-primary" onClick={handleViewDelegatedUsers}>
+            View Delegated Users
           </button>
         </div>
       </div>
@@ -139,73 +237,148 @@ function DOAVersions() {
           <p>There are currently no DOA versions for this study.</p>
         </div>
       ) : (
-        <div className="row">
-          <div className="col">
-            <div className="card">
-              <div className="card-header bg-primary text-white">
-                <h5 className="mb-0">DOA Versions ({versions.length})</h5>
-              </div>
-              <div className="card-body p-0">
-                <div className="table-responsive">
-                  <table className="table table-hover mb-0">
-                    <thead className="table-light">
-                      <tr>
-                        <th>Version</th>
-                        <th>Created Date</th>
-                        <th>Updated Date</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {versions.map((version) => (
-                        <tr key={version.id}>
-                          <td>
-                            <code>v{version.versionNumber || version.id}</code>
-                          </td>
-                          <td>
-                            {version.createdAt
-                              ? new Date(version.createdAt).toLocaleDateString()
-                              : "-"}
-                          </td>
-                          <td>
-                            {version.UpdatedAt
-                              ? new Date(version.UpdatedAt).toLocaleDateString()
-                              : "-"}
-                          </td>
-                          <td>
-                            <span
-                              className={`badge ${
-                                version.isFinalized
-                                  ? "bg-success"
-                                  : "bg-warning"
-                              }`}>
-                              {version.isFinalized ? "Finalized" : "Draft"}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="btn-group" role="group">
-                              <button
-                                className="btn btn-sm btn-primary"
-                                onClick={() => handleView(version.id)}>
-                                View
-                              </button>
-                              <button
-                                className="btn btn-sm btn-secondary"
-                                onClick={() => handleDownloadPDF(version.id)}>
-                                Download PDF
-                              </button>
-                            </div>
-                          </td>
+        <>
+          <div className="row">
+            <div className="col">
+              <div className="card">
+                <div className="card-header bg-primary text-white">
+                  <h5 className="mb-0">DOA Versions ({versions.length})</h5>
+                </div>
+                <div className="card-body p-0">
+                  <div className="table-responsive">
+                    <table className="table table-hover mb-0">
+                      <thead className="table-light">
+                        <tr>
+                          <th>Version</th>
+                          <th>Created</th>
+                          <th>Finalized</th>
+                          <th>Status</th>
+                          <th>Users</th>
+                          <th>Tasks</th>
+                          <th>Actions</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {versions.map((version) => {
+                          const versionLabel = getVersionIdentifier(version);
+                          const createdAt =
+                            version?.created ??
+                            version?.Created ??
+                            version?.createdAt ??
+                            version?.CreatedAt;
+                          const finalizedAt =
+                            version?.finalizedDate ??
+                            version?.FinalizedDate ??
+                            version?.finalizedAt ??
+                            version?.FinalizedAt;
+                          const isFinalized =
+                            version?.isFinalized ?? version?.IsFinalized ?? false;
+                          const userCount =
+                            version?.usersOnStudy?.length ??
+                            version?.UsersOnStudy?.length ??
+                            version?.delegatedUsers?.length ??
+                            version?.entries?.length ??
+                            "-";
+                          const taskCount =
+                            version?.taskCodes?.length ??
+                            version?.TaskCodes?.length ??
+                            version?.entries?.length ??
+                            "-";
+
+                          return (
+                            <tr key={versionLabel}>
+                              <td>
+                                <code>v{versionLabel}</code>
+                              </td>
+                              <td>{formatDate(createdAt)}</td>
+                              <td>{formatDate(finalizedAt)}</td>
+                              <td>
+                                <span
+                                  className={`badge ${
+                                    isFinalized ? "bg-success" : "bg-secondary"
+                                  }`}>
+                                  {isFinalized ? "Finalized" : "Draft"}
+                                </span>
+                              </td>
+                              <td>{userCount}</td>
+                              <td>{taskCount}</td>
+                              <td>
+                                <div className="btn-group" role="group">
+                                  <button
+                                    className="btn btn-sm btn-primary"
+                                    onClick={() => handleViewVersion(version)}>
+                                    View
+                                  </button>
+                                  <button
+                                    className="btn btn-sm btn-secondary"
+                                    onClick={() =>
+                                      handleDownloadVersionPDF(version)
+                                    }>
+                                    Download PDF
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+
+          <div className="row mt-4">
+            <div className="col">
+              <div className="card">
+                <div className="card-header bg-secondary text-white">
+                  <h5 className="mb-0">Study Tasks</h5>
+                </div>
+                <div className="card-body p-0">
+                  <div className="table-responsive">
+                    <table className="table table-hover mb-0">
+                      <thead className="table-light">
+                        <tr>
+                          <th>Code</th>
+                          <th>Title</th>
+                          <th>Description</th>
+                          <th>Versions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {studyTasks.length === 0 ? (
+                          <tr>
+                            <td colSpan="4" className="text-center text-muted">
+                              No study tasks available.
+                            </td>
+                          </tr>
+                        ) : (
+                          studyTasks.map((task) => (
+                            <tr key={task.code}>
+                              <td>{task.code}</td>
+                              <td>{task.title}</td>
+                              <td>
+                                {task.description
+                                  ? task.description
+                                  : "-"}
+                              </td>
+                              <td>
+                                <span className="text-nowrap">
+                                  {task.versions.join(", ")}
+                                </span>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

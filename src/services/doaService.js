@@ -1,183 +1,102 @@
-import api from './apiService';
+import api from "./apiService";
 
-/**
- * DOA (Delegation of Authority) Service
- * Modern React/Axios-based client for DOA endpoints
- */
+// Resolve API base to keep the DOA endpoints aligned with the backend server
+const API_BASE_URL = (() => {
+  if (
+    window.location.hostname === "127.0.0.1" ||
+    window.location.hostname === "localhost"
+  ) {
+    return "http://localhost:3001";
+  }
+  return "";
+})();
 
-const DOA_BASE_PATH = '/api/v1/doa';
+const DOA_BASE_PATH = `${API_BASE_URL}/api/v1/doa`;
 
-export const doaService = {
-  /**
-   * Create initial DOA for a study
-   * @param {string} studyId - The study identifier
-   * @param {object} data - DOA creation data
-   * @returns {Promise}
-   */
-  createInitialDoa: (studyId, data) => {
-    return api.post(`${DOA_BASE_PATH}/CreateInitialDoa/${encodeURIComponent(studyId)}`, data);
+const doaService = {
+  listUsers: (onlyDelegatables = true) => {
+    return api.get(`${API_BASE_URL}/api/v1/users/ListUsers`, {
+      params: { onlyDelegatables }
+    });
   },
 
-  /**
-   * Get current finalized DOA for a study
-   * @param {string} studyId - The study identifier
-   * @returns {Promise}
-   */
-  getCurrentFinalizedDoaForStudy: (studyId) => {
-    return api.get(`${DOA_BASE_PATH}/GetCurrentFinalizedDoaForStudy/${encodeURIComponent(studyId)}`);
+  getStudyDoa: (studyId) => {
+    return api.get(`${DOA_BASE_PATH}/${encodeURIComponent(studyId)}`);
   },
 
-  /**
-   * Get current finalized DOA version
-   * @param {string} studyId - The study identifier
-   * @returns {Promise}
-   */
-  getCurrentFinalizeDoaVersion: (studyId) => {
-    return api.get(`${DOA_BASE_PATH}/GetCurrentFinalizeDOAVersion/${encodeURIComponent(studyId)}`);
-  },
-
-  /**
-   * Get current and pending DOA for a study
-   * @param {string} studyId - The study identifier
-   * @returns {Promise}
-   */
-  getCurrentAndPendingDoaForStudy: (studyId) => {
-    return api.get(`${DOA_BASE_PATH}/GetCurrentAndPendingDoaForStudy/${encodeURIComponent(studyId)}`);
-  },
-
-  /**
-   * Get compiled DOA version for a study
-   * @param {string} studyId - The study identifier
-   * @returns {Promise}
-   */
-  getCompiledDoaVersionForStudy: (studyId) => {
-    return api.get(`${DOA_BASE_PATH}/GetCompiledDoaVersionForStudy/${encodeURIComponent(studyId)}`);
-  },
-
-  /**
-   * Get DOA snapshot version
-   * @param {string} versionId - The version identifier
-   * @returns {Promise}
-   */
-  getDoaSnapshotVersion: (versionId) => {
-    return api.get(`${DOA_BASE_PATH}/GetDoaSnapshotVersion/${encodeURIComponent(versionId)}`);
-  },
-
-  /**
-   * Get DOA changes only for a study
-   * @param {string} studyId - The study identifier
-   * @returns {Promise}
-   */
-  getDoaChangesOnlyForStudy: (studyId) => {
-    return api.get(`${DOA_BASE_PATH}/GetDoaChangesOnlyForStudy/${encodeURIComponent(studyId)}`);
-  },
-
-  /**
-   * Get DOA audit log for a study
-   * @param {string} studyId - The study identifier
-   * @returns {Promise}
-   */
-  getDoaAuditLogForStudy: (studyId) => {
-    return api.get(`${DOA_BASE_PATH}/GetDoaAuditLogForStudy/${encodeURIComponent(studyId)}`);
-  },
-
-  /**
-   * Get editable DOA for a study
-   * @param {string} studyId - The study identifier
-   * @returns {Promise}
-   */
-  getEditableDoa: (studyId) => {
-    return api.get(`${DOA_BASE_PATH}/GetEditableDoa/${encodeURIComponent(studyId)}`);
-  },
-
-  /**
-   * Remove user from DOA
-   * @param {object} data - Object with userId and doaId
-   * @returns {Promise}
-   */
-  removeUserFromDoa: (data) => {
-    return api.post(`${DOA_BASE_PATH}/RemoveUserFromDoa/`, data);
-  },
-
-  /**
-   * Add user to DOA
-   * @param {object} data - Object with userId and doaId
-   * @returns {Promise}
-   */
   addUserToDoa: (data) => {
     return api.post(`${DOA_BASE_PATH}/AddUserToDoa/`, data);
   },
 
-  /**
-   * Finalize DOA
-   * @param {object} data - DOA finalization data
-   * @returns {Promise}
-   */
-  finalizeDoa: (data) => {
-    return api.post(`${DOA_BASE_PATH}/FinalizeDoa/`, data);
+  removeUserFromDoa: (data) => {
+    return api.post(`${DOA_BASE_PATH}/RemoveUserFromDoa/`, data);
   },
 
-  /**
-   * Download compiled DOA log PDF
-   * @param {string} studyId - The study identifier
-   * @param {object} options - Optional parameters for PDF generation
-   * @returns {Promise}
-   */
+   // call /api/v1/doa/UpdateUserTitle
+      // body = { studyId: id, userId: editingUser.userId, title: editedTitle }
+  updateUserTitle: (data) => {
+    return api.post(`${DOA_BASE_PATH}/UpdateUserTitle/`, data);
+  },
+
+  addTaskToDoa: (data) => {
+    return api.post(`${DOA_BASE_PATH}/AddTaskToDoa/`, data);
+  },
+
+  removeTaskFromDoa: (data) => {
+    return api.post(`${DOA_BASE_PATH}/RemoveTaskFromDoa/`, data);
+  },
+
+  getStandardTasks: () => {
+    return api.post(`${DOA_BASE_PATH}/getStandardTasks`);
+  },
+
+  finalizeDoa: (params) => {
+    return api.post(`${DOA_BASE_PATH}/FinalizeDoa/`, null, {
+      params,
+    });
+  },
+
   downloadCompiledDoaLogPdf: async (studyId, options = {}) => {
-    try {
-      const response = await api.post(
-        `${DOA_BASE_PATH}/DownloadCompliledDoaLogPdf/${encodeURIComponent(studyId)}`,
-        options,
-        { responseType: 'blob' }
-      );
-      
-      // Trigger download
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `doa-compiled-${studyId}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-      
-      return response;
-    } catch (error) {
-      console.error('Error downloading compiled DOA PDF:', error);
-      throw error;
-    }
+    const response = await api.post(
+      `${DOA_BASE_PATH}/DownloadCompliledDoaLogPdf/${encodeURIComponent(
+        studyId
+      )}`,
+      options,
+      { responseType: "blob" }
+    );
+
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `doa-compiled-${studyId}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+
+    return response;
   },
 
-  /**
-   * Download change-only DOA log PDF
-   * @param {string} studyId - The study identifier
-   * @param {object} options - Optional parameters for PDF generation
-   * @returns {Promise}
-   */
   downloadChangeOnlyDoaLogPdf: async (studyId, options = {}) => {
-    try {
-      const response = await api.post(
-        `${DOA_BASE_PATH}/DownloadChangeOnlyDoaLogPdf/${encodeURIComponent(studyId)}`,
-        options,
-        { responseType: 'blob' }
-      );
-      
-      // Trigger download
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `doa-changes-${studyId}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-      
-      return response;
-    } catch (error) {
-      console.error('Error downloading change-only DOA PDF:', error);
-      throw error;
-    }
-  }
+    const response = await api.post(
+      `${DOA_BASE_PATH}/DownloadChangeOnlyDoaLogPdf/${encodeURIComponent(
+        studyId
+      )}`,
+      options,
+      { responseType: "blob" }
+    );
+
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `doa-changes-${studyId}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+
+    return response;
+  },
 };
 
 export default doaService;
