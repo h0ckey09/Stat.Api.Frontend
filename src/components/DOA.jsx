@@ -140,6 +140,14 @@ function DOA() {
             </div>
           )}
         </div>
+        <div className="col-auto">
+          <button 
+            className="btn btn-primary" 
+            onClick={() => navigate('/doa/standard-tasks')}
+          >
+            Manage Standard Tasks
+          </button>
+        </div>
       </div>
 
       {studies.length === 0 ? (

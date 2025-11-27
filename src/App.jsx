@@ -14,6 +14,7 @@ import DOA from "./components/DOA";
 import DOAVersions from "./components/DOAVersions";
 import DOAView from "./components/DOAView";
 import DOAVersion from "./components/DOAVersion";
+import ManageStandardTasks from "./components/ManageStandardTasks";
 import Layout from "./components/Layout";
 import "./App.css";
 
@@ -74,6 +75,14 @@ function AppContent() {
           element={
             <ProtectedRoute>
               <DOA />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/doa/standard-tasks"
+          element={
+            <ProtectedRoute>
+              <ManageStandardTasks />
             </ProtectedRoute>
           }
         />

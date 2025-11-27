@@ -78,25 +78,65 @@ const doaService = {
   },
 
   downloadChangeOnlyDoaLogPdf: async (studyId, options = {}) => {
-    const response = await api.post(
-      `${DOA_BASE_PATH}/DownloadChangeOnlyDoaLogPdf/${encodeURIComponent(
-        studyId
-      )}`,
-      options,
-      { responseType: "blob" }
-    );
-
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `doa-changes-${studyId}.pdf`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(url);
-
-    return response;
+    try {
+      const response = await api.post(
+        `${DOA_BASE_PATH}/DownloadChangeOnlyDoaLogPdf/${encodeURIComponent(studyId)}`,
+        options,
+        { responseType: 'blob' }
+      );
+      
+      // Trigger download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `doa-changes-${studyId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      return response;
+    } catch (error) {
+      console.error('Error downloading change-only DOA PDF:', error);
+      throw error;
+    }
   },
+
+  /**
+   * Get all standard tasks
+   * @returns {Promise}
+   */
+  getStandardTasks: () => {
+    return api.get(`${DOA_BASE_PATH}/getStandardTasks`);
+  },
+
+  /**
+   * Update a standard task
+   * @param {string} id - The standard task identifier
+   * @param {object} data - Task update data
+   * @returns {Promise}
+   */
+  updateStandardTask: (id, data) => {
+    return api.post(`${DOA_BASE_PATH}/updateStandardTask/${encodeURIComponent(id)}`, data);
+  },
+
+  /**
+   * Archive a standard task
+   * @param {string} id - The standard task identifier
+   * @returns {Promise}
+   */
+  archiveStandardTask: (id) => {
+    return api.post(`${DOA_BASE_PATH}/archiveStandardTask/${encodeURIComponent(id)}`);
+  },
+
+  /**
+   * Create a new standard task
+   * @param {object} data - New task data
+   * @returns {Promise}
+   */
+  newStandardTask: (data) => {
+    return api.post(`${DOA_BASE_PATH}/newStandardTask`, data);
+  }
 };
 
 export default doaService;
