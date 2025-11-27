@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import useToast from "../hooks/useToast";
 import { useParams, useNavigate } from "react-router-dom";
 import doaService from "../services/doaService";
 
@@ -10,7 +11,7 @@ const formatDateTime = (value) => {
 const resolveDisplayName = (user) => {
   if (!user) return "Unknown";
   return (
-    (user.DisplayName ??
+    (user.displayName ??
       user.name ??
       `${user.FirstName ?? ""} ${user.LastName ?? ""}`.trim()) ||
     "-"
@@ -20,22 +21,9 @@ const resolveDisplayName = (user) => {
 const resolveRole = (user) =>
   user?.titleOrRole ?? user?.Title ?? user?.role ?? user?.Role ?? "-";
 
-const getUserIdValue = (user) => {
+const getDoaUserIdValue = (user) => {
   if (!user) return null;
-  return (
-    user.userId ??
-    user.UserId ??
-    user.id ??
-    user.Id ??
-    user.UserID ??
-    user.User?.userId ??
-    user.User?.UserId ??
-    user.USR_Users?.UserID ??
-    user.USR_Users?.UserId ??
-    user.USR_Users?.Id ??
-    user.USR_Users?.id ??
-    null
-  );
+  return user.doaUserId;
 };
 
 const getVersionIdentifier = (version) => {
@@ -50,6 +38,7 @@ const getVersionIdentifier = (version) => {
 };
 
 function DOAVersion() {
+  const toast = useToast();
   const { id, versionNumber } = useParams();
   const navigate = useNavigate();
   const [studyInfo, setStudyInfo] = useState(null);
@@ -69,6 +58,7 @@ function DOAVersion() {
   const [showEditUserModal, setShowEditUserModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [editedTitle, setEditedTitle] = useState("");
+  const [editedDisplayName, setEditedDisplayName] = useState("");
   const [savingTitle, setSavingTitle] = useState(false);
 
   // Add Task modal state
@@ -78,7 +68,17 @@ function DOAVersion() {
   const [taskCode, setTaskCode] = useState("");
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
+  const [standardTaskId, setStandardTaskId] = useState(null);
   const [addingTask, setAddingTask] = useState(false);
+
+  // Add Delegation modal state
+  const [showAddDelegationModal, setShowAddDelegationModal] = useState(false);
+  const [selectedDelegationUsers, setSelectedDelegationUsers] = useState([]);
+  const [selectedDelegationTasks, setSelectedDelegationTasks] = useState([]);
+  const [addingDelegations, setAddingDelegations] = useState(false);
+
+  // Finalize DOA state
+  const [finalizingDoa, setFinalizingDoa] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -107,19 +107,8 @@ function DOAVersion() {
       setError(null);
       const response = await doaService.getStudyDoa(id);
       const record = response.data || {};
-      setStudyInfo(
-        record.studyInfo ??
-          record.StudyInfo ??
-          record.study ??
-          record.Study ??
-          null
-      );
-      const versions =
-        record.versions ??
-        record.Versions ??
-        record.DoaVersions ??
-        record.doaVersions ??
-        [];
+      setStudyInfo(record.studyInfo ?? null);
+      const versions = record.versions ?? [];
       const selectedVersion = findMatchingVersion(versions);
       setVersionData(selectedVersion);
     } catch (err) {
@@ -146,19 +135,14 @@ function DOAVersion() {
       const users = response.data || [];
 
       // Get current users on study
-      const snapshot = versionData?.compiledSnapshot ?? versionData ?? null;
-      const currentUsers =
-        snapshot?.usersOnStudy ??
-        snapshot?.UsersOnStudy ??
-        snapshot?.delegatedUsers ??
-        [];
+      const currentUsers = snapshot?.usersOnStudy || [];
       const currentUserIds = currentUsers
-        .map((u) => getUserIdValue(u))
+        .map((u) => u.userId)
         .filter((val) => val != null);
 
       // Filter out users already on the study
       const availableUsers = users.filter((user) => {
-        const userId = getUserIdValue(user);
+        const userId = user.id || user.userId || null;
         if (!userId) return false;
         return !currentUserIds.includes(userId);
       });
@@ -167,7 +151,7 @@ function DOAVersion() {
       setSelectedUsers([]);
     } catch (err) {
       console.error("Error loading users:", err);
-      alert(
+      toast.error(
         "Failed to load users: " + (err.response?.data?.message || err.message)
       );
     } finally {
@@ -194,7 +178,7 @@ function DOAVersion() {
 
   const handleAddPeopleToStudy = async () => {
     if (selectedUsers.length === 0) {
-      alert("Please select at least one person to add.");
+      toast.info("Please select at least one person to add.");
       return;
     }
 
@@ -206,7 +190,7 @@ function DOAVersion() {
 
       for (const userId of selectedUsers) {
         // Find the user object to get their details
-        const user = allUsers.find((u) => getUserIdValue(u) === userId);
+        const user = allUsers.find((u) => u.id== userId);
 
         if (!user) {
           errors.push(`User ${userId} not found`);
@@ -234,24 +218,25 @@ function DOAVersion() {
 
       // Show results
       if (successCount > 0 && errors.length === 0) {
-        alert(`Successfully added ${successCount} person(s) to the study.`);
+        toast.success(
+          `Successfully added ${successCount} person(s) to the study.`
+        );
         handleCloseAddPeopleModal();
         await loadDOAVersion();
       } else if (successCount > 0 && errors.length > 0) {
-        alert(
-          `Partially successful:\n` +
-            `- Added ${successCount} person(s)\n` +
-            `- Failed ${errors.length} person(s):\n` +
-            errors.join("\n")
+        toast.warning(
+          `Partially successful: Added ${successCount}, Failed ${
+            errors.length
+          }: ${errors.join(", ")}`
         );
         handleCloseAddPeopleModal();
         await loadDOAVersion();
       } else {
-        alert(`Failed to add users:\n${errors.join("\n")}`);
+        toast.error(`Failed to add users: ${errors.join(", ")}`);
       }
     } catch (err) {
       console.error("Error adding people to study:", err);
-      alert(
+      toast.error(
         "Failed to add people: " + (err.response?.data?.message || err.message)
       );
     } finally {
@@ -262,6 +247,7 @@ function DOAVersion() {
   const handleOpenEditUserModal = (user) => {
     setEditingUser(user);
     setEditedTitle(resolveRole(user));
+    setEditedDisplayName(resolveDisplayName(user));
     setShowEditUserModal(true);
   };
 
@@ -269,23 +255,25 @@ function DOAVersion() {
     setShowEditUserModal(false);
     setEditingUser(null);
     setEditedTitle("");
+    setEditedDisplayName("");
   };
 
   const handleSaveUserTitle = async () => {
     if (!editingUser) return;
 
-    const userId = getUserIdValue(editingUser);
+    const userId = getDoaUserIdValue(editingUser);
     if (!userId) {
-      alert("Unable to determine the user's ID for updating the title.");
+      toast.error("Unable to determine the user's ID for updating the title.");
       return;
     }
 
     setSavingTitle(true);
     try {
-      await doaService.updateUserTitle({
+      await doaService.updateUserInfo({
         studyId: id,
         userId,
         title: editedTitle,
+        displayName: editedDisplayName,
       });
 
       console.log("Updating user title:", {
@@ -298,7 +286,7 @@ function DOAVersion() {
       await loadDOAVersion();
     } catch (err) {
       console.error("Error updating user title:", err);
-      alert(
+      toast.error(
         "Failed to update title: " +
           (err.response?.data?.message || err.message)
       );
@@ -308,9 +296,9 @@ function DOAVersion() {
   };
 
   const handleRemoveUserFromStudy = async (user) => {
-    const userId = getUserIdValue(user);
+    const userId = getDoaUserIdValue(user);
     if (!userId) {
-      alert("Unable to determine the user's ID for removal.");
+      toast.error("Unable to determine the user's ID for removal.");
       return;
     }
 
@@ -331,7 +319,7 @@ function DOAVersion() {
       await loadDOAVersion();
     } catch (err) {
       console.error("Error removing user from study:", err);
-      alert(
+      toast.error(
         `Failed to remove ${displayName}: ${
           err.response?.data?.message || err.message
         }`
@@ -342,19 +330,21 @@ function DOAVersion() {
   };
 
   const handleOpenAddTaskModal = async () => {
-    setShowAddTaskModal(true);
+    // Reset form fields
     setTaskCode("");
     setTaskTitle("");
     setTaskDescription("");
 
-    // Load standard tasks
+    // Load standard tasks first
     setLoadingStandardTasks(true);
     try {
       const response = await doaService.getStandardTasks();
-      setStandardTasks(response.data || []);
+      setStandardTasks(response.data.tasks || []);
+      // Only show modal if loading was successful
+      setShowAddTaskModal(true);
     } catch (err) {
       console.error("Error loading standard tasks:", err);
-      alert(
+      toast.error(
         "Failed to load standard tasks: " +
           (err.response?.data?.message || err.message)
       );
@@ -377,17 +367,23 @@ function DOAVersion() {
       setTaskCode("");
       setTaskTitle("");
       setTaskDescription("");
+      setStandardTaskId(null);
       return;
     }
 
     const task = standardTasks.find(
-      (t) => (t.id ?? t.Id ?? t.code ?? t.Code) === selectedTaskId
+      (t) =>
+        (t.standardId ?? t.Id ?? t.code ?? t.Code).toString() ===
+        selectedTaskId.toString()
     );
 
     if (task) {
       setTaskCode(task.code ?? task.Code ?? "");
       setTaskTitle(task.title ?? task.Title ?? task.name ?? task.Name ?? "");
       setTaskDescription(task.description ?? task.Description ?? "");
+      setStandardTaskId(
+        task.standardId ?? task.Id ?? task.code ?? task.Code ?? -1
+      );
     }
   };
 
@@ -398,7 +394,7 @@ function DOAVersion() {
 
   const handleAddTask = async () => {
     if (!taskCode.trim() || !taskTitle.trim()) {
-      alert("Please enter both a task code and title.");
+      toast.info("Please enter both a task code and title.");
       return;
     }
 
@@ -409,19 +405,126 @@ function DOAVersion() {
         code: taskCode.trim(),
         title: taskTitle.trim(),
         description: taskDescription.trim(),
+        standardTaskId: standardTaskId || null,
       });
 
-      alert("Task added successfully!");
+      //alert("Task added successfully!");
       handleCloseAddTaskModal();
       await loadDOAVersion();
     } catch (err) {
       console.error("Error adding task:", err);
-      alert(
+      toast.error(
         "Failed to add task: " + (err.response?.data?.message || err.message)
       );
     } finally {
       setAddingTask(false);
     }
+  };
+
+  const handleFinalizeDoa = async () => {
+    const confirmMessage =
+      "Are you sure you want to finalize this DOA version?\n\n" +
+      "Once finalized, this version cannot be modified.";
+
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    setFinalizingDoa(true);
+    try {
+      await doaService.finalizeDoa({
+        studyId: id,
+        versionNumber: versionNumber || getVersionIdentifier(versionData),
+      });
+
+      toast.success("DOA version finalized successfully!");
+      await loadDOAVersion();
+    } catch (err) {
+      console.error("Error finalizing DOA:", err);
+      toast.error(
+        "Failed to finalize DOA: " +
+          (err.response?.data?.message || err.message)
+      );
+    } finally {
+      setFinalizingDoa(false);
+    }
+  };
+
+  const handleOpenAddDelegationModal = () => {
+    setShowAddDelegationModal(true);
+    setSelectedDelegationUsers([]);
+    setSelectedDelegationTasks([]);
+  };
+
+  const handleCloseAddDelegationModal = () => {
+    setShowAddDelegationModal(false);
+    setSelectedDelegationUsers([]);
+    setSelectedDelegationTasks([]);
+  };
+
+  const handleDelegationUserToggle = (userId) => {
+    setSelectedDelegationUsers((prev) =>
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId]
+    );
+  };
+
+  const handleDelegationTaskToggle = (taskCode) => {
+    setSelectedDelegationTasks((prev) =>
+      prev.includes(taskCode)
+        ? prev.filter((code) => code !== taskCode)
+        : [...prev, taskCode]
+    );
+  };
+
+  const handleAddDelegations = async () => {
+    if (
+      selectedDelegationUsers.length === 0 ||
+      selectedDelegationTasks.length === 0
+    ) {
+      toast.info("Please select at least one user and one task.");
+      return;
+    }
+
+    setAddingDelegations(true);
+    try {
+      // Build batch delegations payload as cartesian product
+      const delegations = [];
+      for (const userId of selectedDelegationUsers) {
+        for (const taskCode of selectedDelegationTasks) {
+          delegations.push({ doaUserId: userId, taskCode });
+        }
+      }
+
+      await doaService.addDelegations(id, delegations);
+
+      toast.success(`Successfully added ${delegations.length} delegation(s).`);
+      handleCloseAddDelegationModal();
+      await loadDOAVersion();
+    } catch (err) {
+      console.error("Error adding delegations:", err);
+      toast.error(
+        "Failed to add delegations: " +
+          (err.response?.data?.message || err.message)
+      );
+    } finally {
+      setAddingDelegations(false);
+    }
+  };
+
+  // versionChanges will be computed after snapshot/version are defined later
+
+  const handleDeleteChange = async (recordId, change) => {
+    if (!recordId) {
+      toast.info("Delete API pending; missing record id.");
+      return;
+    }
+    const confirmMsg = `Are you sure you want to delete change #${recordId}?`;
+    if (!window.confirm(confirmMsg)) return;
+    // Placeholder: wire API endpoint when available
+    console.log("Delete change record", { recordId, change });
+    toast.info("Delete endpoint not yet available; will wire later.");
   };
 
   if (loading) {
@@ -458,14 +561,105 @@ function DOAVersion() {
     studyInfo?.currentVersion ??
     "Unknown";
   const snapshot = versionData?.compiledSnapshot ?? versionData ?? null;
-  const users = studyInfo?.doaUsers ?? [];
-  const tasks =
-    snapshot?.taskCodes ?? snapshot?.TaskCodes ?? snapshot?.tasks ?? [];
-  const entries =
-    snapshot?.entries ?? snapshot?.Entries ?? snapshot?.userTasks ?? [];
+  const users = snapshot?.usersOnStudy ?? [];
+  const tasks = snapshot?.taskCodes ?? [];
+  const entries = snapshot?.entries ?? [];
+
+  // Build dynamic task-group columns from tasks (letters-only portion of code)
+  const getCodeLetters = (code) =>
+    (code || "").replace(/[^A-Za-z]/g, "").toUpperCase();
+  const taskGroups = Array.from(
+    new Set(
+      tasks
+        .map((t) => getCodeLetters(t.task.code ?? ""))
+        .filter((g) => g && g.length > 0)
+    )
+  ).sort((a, b) => a.localeCompare(b));
+
+  // Metrics for version change summary table
+  const currentVersion = snapshot?.version ?? snapshot?.Version ?? versionLabel;
+  let changeUserIds = new Set();
+  let changeTaskCodes = new Set();
+  let changeDelegationCount = 0;
+
+  entries.forEach((entry) => {
+    const user = entry?.user;
+    const userId = getDoaUserIdValue(user);
+    const entryTasks = entry?.tasks ?? [];
+    entryTasks.forEach((t) => {
+      const code = t?.task?.code ?? t?.code ?? t?.Code ?? "";
+      const addedVersion = t?.addedVersion ?? t?.AddedVersion;
+      const removedVersion = t?.removedVersion ?? t?.RemovedVersion;
+      const isRemoved = t?.isRemoved ?? t?.IsRemoved ?? false;
+      const isChange =
+        (addedVersion != null &&
+          String(addedVersion) === String(currentVersion) &&
+          !isRemoved) ||
+        (isRemoved &&
+          removedVersion != null &&
+          String(removedVersion) === String(currentVersion));
+      if (isChange) {
+        if (userId) changeUserIds.add(userId);
+        if (code) changeTaskCodes.add(code);
+        changeDelegationCount++;
+      }
+    });
+  });
+
+  const combinedDelegationCount = entries.reduce(
+    (sum, entry) => sum + (entry?.tasks?.length || 0),
+    0
+  );
+
+  // Aggregate entries by user so each user renders on a single row
+  const aggregatedUserEntries = (() => {
+    const map = new Map();
+    entries.forEach((entry) => {
+      const user = entry?.user;
+      const userId = getDoaUserIdValue(user) ?? `anon-${Math.random()}`;
+      const existing = map.get(userId);
+      const entryTasks = Array.isArray(entry?.tasks) ? entry.tasks : [];
+      if (!existing) {
+        // Deduplicate tasks by code inside this entry
+        const taskMap = new Map();
+        entryTasks.forEach((t) => {
+          const codeKey = t?.task?.code ?? t?.code ?? t?.Code;
+          if (!codeKey) return;
+          taskMap.set(codeKey, t);
+        });
+        map.set(userId, {
+          user,
+          userId,
+          tasks: Array.from(taskMap.values()),
+        });
+      } else {
+        // Merge tasks, overwriting by code so last occurrence wins
+        const taskMap = new Map();
+        existing.tasks.forEach((t) => {
+          const codeKey = t?.task?.code ?? t?.code ?? t?.Code;
+          if (!codeKey) return;
+          taskMap.set(codeKey, t);
+        });
+        entryTasks.forEach((t) => {
+          const codeKey = t?.task?.code ?? t?.code ?? t?.Code;
+          if (!codeKey) return;
+          taskMap.set(codeKey, t);
+        });
+        existing.tasks = Array.from(taskMap.values());
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => {
+      const nameA = (resolveDisplayName(a.user) || "").toLowerCase();
+      const nameB = (resolveDisplayName(b.user) || "").toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+  })();
+
+  // Build flat list of changes in this version for the Changes table using snapshot.changes
+  const changeLog = snapshot?.changes ?? [];
 
   return (
-    <div className="container mt-4">
+    <div className="container mt-4" style={{ marginBottom: "30px" }}>
       <div className="row mb-3">
         <div className="col">
           <button className="btn btn-secondary mb-3" onClick={handleBack}>
@@ -480,7 +674,12 @@ function DOAVersion() {
               </h2>
               <p className="text-muted">
                 Version {versionLabel} |
-                <span className="badge bg-info text-dark ms-2">
+                <span
+                  className={`badge ms-2 ${
+                    versionData?.isFinalized || versionData?.IsFinalized
+                      ? "bg-success"
+                      : "bg-info text-dark"
+                  }`}>
                   {versionData?.isFinalized || versionData?.IsFinalized
                     ? "Finalized"
                     : "Draft"}
@@ -488,23 +687,47 @@ function DOAVersion() {
                 | Study ID: <code>{id}</code>{" "}
               </p>
             </div>
-            <div className="d-flex gap-2">
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={handleOpenAddPeopleModal}>
-                <i className="bi bi-person-plus"></i> Add People
-              </button>
-              <button type="button" className="btn btn-primary">
-                <i className="bi bi-person-badge"></i> Add Delegate
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={handleOpenAddTaskModal}>
-                <i className="bi bi-list-task"></i> Add Task
-              </button>
-            </div>
+            {!(versionData?.isFinalized || versionData?.IsFinalized) && (
+              <div className="d-flex gap-2">
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleOpenAddPeopleModal}>
+                  <i className="bi bi-person-plus"></i> Add People
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleOpenAddTaskModal}>
+                  <i className="bi bi-list-task"></i> Add Task
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  style={{ backgroundColor: "#6f42c1", color: "white" }}
+                  onClick={handleOpenAddDelegationModal}>
+                  <i className="bi bi-person-badge"></i> Add Delegate
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-success"
+                  onClick={handleFinalizeDoa}
+                  disabled={finalizingDoa}>
+                  {finalizingDoa ? (
+                    <>
+                      <span
+                        className="spinner-border spinner-border-sm me-2"
+                        role="status"></span>
+                      Finalizing...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bi bi-lock-fill"></i> Finalize DOA
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -549,19 +772,41 @@ function DOAVersion() {
               <h5 className="mb-0">Snapshot Totals</h5>
             </div>
             <div className="card-body">
-              <div className="d-flex justify-content-between">
-                <div>
-                  <p className="mb-1 small text-muted">Users</p>
-                  <strong>{users.length}</strong>
-                </div>
-                <div>
-                  <p className="mb-1 small text-muted">Tasks</p>
-                  <strong>{tasks.length}</strong>
-                </div>
-                <div>
-                  <p className="mb-1 small text-muted">Entries</p>
-                  <strong>{entries.length}</strong>
-                </div>
+              <div className="table-responsive">
+                <table className="table table-sm mb-0">
+                  <thead className="table-light">
+                    <tr>
+                      <th style={{ width: "220px" }}>Version</th>
+                      <th className="text-center" style={{ width: "110px" }}>
+                        User Total
+                      </th>
+                      <th className="text-center" style={{ width: "110px" }}>
+                        Task Total
+                      </th>
+                      <th className="text-center" style={{ width: "140px" }}>
+                        Delegation Total
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        <strong>This Version's Changes</strong>
+                      </td>
+                      <td className="text-center">{changeUserIds.size}</td>
+                      <td className="text-center">{changeTaskCodes.size}</td>
+                      <td className="text-center">{changeDelegationCount}</td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <strong>Combined Totals</strong>
+                      </td>
+                      <td className="text-center">{users.length}</td>
+                      <td className="text-center">{tasks.length}</td>
+                      <td className="text-center">{combinedDelegationCount}</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -580,7 +825,7 @@ function DOAVersion() {
                   <thead className="table-light">
                     <tr>
                       <th>Name</th>
-                      <th>Title</th> <th>Email</th>
+                      <th>Title</th>
                       <th className="text-center" style={{ width: "100px" }}>
                         Actions
                       </th>
@@ -589,14 +834,15 @@ function DOAVersion() {
                   <tbody>
                     {users.length === 0 ? (
                       <tr>
-                        <td colSpan="4" className="text-center text-muted">
+                        <td colSpan="3" className="text-center text-muted">
                           No users in snapshot
                         </td>
                       </tr>
                     ) : (
                       users.map((user, index) => {
-                        const resolvedUserId = getUserIdValue(user);
-                        const rowKey = resolvedUserId ?? `snapshot-user-${index}`;
+                        const resolvedUserId = getDoaUserIdValue(user);
+                        const rowKey =
+                          resolvedUserId ?? `snapshot-user-${index}`;
                         const isRemoving =
                           resolvedUserId != null &&
                           removingUserId === resolvedUserId;
@@ -607,7 +853,6 @@ function DOAVersion() {
                               <strong>{resolveDisplayName(user)}</strong>
                             </td>
                             <td>{resolveRole(user)}</td>
-                            <td>{user.USR_Users.EmailAddress ?? "-"}</td>
                             <td className="text-center">
                               <button
                                 className="btn btn-sm btn-link text-primary p-0 me-2"
@@ -653,31 +898,175 @@ function DOAVersion() {
                       <th>Code</th>
                       <th>Title</th>
                       <th>Status</th>
+                      <th style={{ width: "80px" }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {tasks.length === 0 ? (
                       <tr>
-                        <td colSpan="3" className="text-center text-muted">
+                        <td colSpan="4" className="text-center text-muted">
                           No task codes defined
                         </td>
                       </tr>
                     ) : (
-                      tasks.map((task, index) => (
+                      tasks.map((task, index) => {
+                        const taskCode = task.task.code;
+                        const codeLetters = taskCode
+                          .replace(/[^A-Za-z]/g, "")
+                          .toUpperCase();
+                        const rowClass = codeLetters
+                          ? `taskcode_${codeLetters}`
+                          : "";
+                        return (
+                          <tr
+                            key={
+                              task?.taskId ??
+                              task?.TaskId ??
+                              task?.code ??
+                              index
+                            }
+                            className={rowClass}>
+                            <td>{task.task.code ?? "-"}</td>
+                            <td>{task.task.title ?? "-"}</td>
+                            <td>
+                              {(() => {
+                                const isRemoved =
+                                  task?.task?.isRemoved ??
+                                  task?.IsRemoved ??
+                                  false;
+                                const addedV =
+                                  task?.addedVersion ??
+                                  task?.AddedVersion ??
+                                  task?.task?.addedVersion ??
+                                  task?.task?.AddedVersion;
+                                const removedV =
+                                  task?.removedVersion ??
+                                  task?.RemovedVersion ??
+                                  task?.task?.removedVersion ??
+                                  task?.task?.RemovedVersion;
+
+                                const isAddedThisVersion =
+                                  addedV != null &&
+                                  String(addedV) === String(currentVersion) &&
+                                  !isRemoved;
+                                const isRemovedThisVersion =
+                                  isRemoved &&
+                                  removedV != null &&
+                                  String(removedV) === String(currentVersion);
+
+                                if (isRemovedThisVersion) {
+                                  return (
+                                    <span className="badge bg-danger">
+                                      Removed
+                                    </span>
+                                  );
+                                }
+                                if (isAddedThisVersion) {
+                                  return (
+                                    <span className="badge bg-primary">
+                                      New
+                                    </span>
+                                  );
+                                }
+                                if (isRemoved) {
+                                  return (
+                                    <span className="badge bg-secondary">
+                                      Inactive
+                                    </span>
+                                  );
+                                }
+                                return (
+                                  <span className="badge bg-success">
+                                    Active
+                                  </span>
+                                );
+                              })()}
+                            </td>
+                            <td>
+                              <i
+                                className="bi bi-pencil-square text-primary me-2"
+                                style={{ cursor: "pointer" }}
+                                title="Edit Task"
+                                onClick={() => {
+                                  // TODO: Implement edit task handler
+                                  console.log("Edit task:", task);
+                                }}></i>
+                              <i
+                                className="bi bi-trash text-danger"
+                                style={{ cursor: "pointer" }}
+                                title="Delete Task"
+                                onClick={() => {
+                                  // TODO: Implement delete task handler
+                                  console.log("Delete task:", task);
+                                }}></i>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Changes in This Version - Full Width */}
+      <div className="row mt-3">
+        <div className="col">
+          <div className="card">
+            <div className="card-header bg-warning">
+              <h5 className="mb-0">Changes in This Version</h5>
+            </div>
+            <div className="card-body p-0">
+              <div className="table-responsive">
+                <table className="table table-sm mb-0 align-middle">
+                  <thead className="table-light">
+                    <tr>
+                      <th style={{ minWidth: "220px" }}>Description</th>
+                      <th>Changes</th>
+                      <th className="text-center" style={{ width: "100px" }}>
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {changeLog.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="text-center text-muted">
+                          No changes in this version
+                        </td>
+                      </tr>
+                    ) : (
+                      changeLog.map((chg, i) => (
                         <tr
                           key={
-                            task?.taskId ?? task?.TaskId ?? task?.code ?? index
+                            chg.recordId ?? `${chg.userId}-${chg.code}-${i}`
                           }>
-                          <td>{task?.code ?? task?.Code ?? "-"}</td>
-                          <td>{task?.title ?? task?.Title ?? "-"}</td>
+                          <td>{chg.description}</td>
+
                           <td>
-                            {task?.isRemoved || task?.IsRemoved ? (
-                              <span className="badge bg-danger text-dark">
-                                Removed
+                            {chg.changeType.includes("Added") ? (
+                              <span className="badge rounded-pill bg-success">
+                                Added {chg.code}
                               </span>
                             ) : (
-                              <span className="badge bg-success">Active</span>
+                              <span className="badge rounded-pill bg-danger">
+                                Removed {chg.code}
+                              </span>
                             )}
+                          </td>
+                          <td className="text-center">
+                            <button
+                              className="btn btn-sm btn-link text-danger p-0"
+                              title="Delete Change"
+                              data-record-id={chg.recordId ?? ""}
+                              onClick={() =>
+                                handleDeleteChange(chg.recordId, chg)
+                              }>
+                              <i className="bi bi-trash"></i>
+                            </button>
                           </td>
                         </tr>
                       ))
@@ -690,44 +1079,154 @@ function DOAVersion() {
         </div>
       </div>
 
-      <div className="row gy-3 mt-3">
+      {/* Assignments by Task Group - Full Width */}
+      <div className="row mt-3">
         <div className="col">
           <div className="card">
             <div className="card-header bg-dark text-white">
-              <h5 className="mb-0">Entries / Assignments</h5>
+              <h5 className="mb-0">Assignments by Task Group</h5>
             </div>
             <div className="card-body p-0">
               <div className="table-responsive">
-                <table className="table table-sm mb-0">
+                <table className="table table-sm mb-0 align-middle">
                   <thead className="table-light">
                     <tr>
-                      <th>User</th>
-                      <th>Task</th>
-                      <th>Action</th>
+                      <th style={{ minWidth: "220px" }}>Name</th>
+                      <th style={{ minWidth: "200px" }}>Title</th>
+                      {taskGroups.map((g) => (
+                        <th key={g} className="text-center">
+                          {g}
+                        </th>
+                      ))}
+                      <th className="text-center" style={{ width: "100px" }}>
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {entries.length === 0 ? (
+                    {aggregatedUserEntries.length === 0 ? (
                       <tr>
-                        <td colSpan="3" className="text-center text-muted">
-                          No entries captured for this version
+                        <td
+                          colSpan={2 + taskGroups.length + 1}
+                          className="text-center text-muted">
+                          No entries in snapshot
                         </td>
                       </tr>
                     ) : (
-                      entries.map((entry, index) => {
-                        const user = entry?.user;
-                        const task = entry?.task;
-                        const entryAction =
-                          entry?.isRemoval || entry?.IsRemoval
-                            ? "Removed"
-                            : "Assigned";
+                      aggregatedUserEntries.map((entry) => {
+                        const user = entry.user;
+                        const displayName =
+                          resolveDisplayName(user) || "Unknown";
+                        const titleOrRole = resolveRole(user);
+                        const userTasks = entry.tasks || [];
                         return (
-                          <tr key={entry?.entryId ?? entry?.EntryId ?? index}>
-                            <td>{resolveDisplayName(user)}</td>
+                          <tr key={entry.userId}>
                             <td>
-                              <strong>{task?.code ?? task?.Code ?? "-"}</strong>
+                              <strong>{displayName}</strong>
                             </td>
-                            <td>{entryAction}</td>
+                            <td>{titleOrRole}</td>
+                            {taskGroups.map((group) => {
+                              const currentVersion =
+                                snapshot?.version ??
+                                snapshot?.Version ??
+                                versionLabel;
+                              const groupTasks = userTasks.filter((t) =>
+                                (t?.task?.code ?? "")
+                                  .toUpperCase()
+                                  .startsWith(group)
+                              );
+                              if (groupTasks.length === 0) {
+                                return (
+                                  <td
+                                    key={group}
+                                    className="text-muted task-cell">
+                                    <span className="opacity-50">N/A</span>
+                                  </td>
+                                );
+                              }
+                              const pills = groupTasks
+                                .map((t) => {
+                                  const code = t?.task?.code ?? "";
+                                  const addedV =
+                                    t?.addedVersion ?? t?.AddedVersion;
+                                  const removedV =
+                                    t?.removedVersion ?? t?.RemovedVersion;
+                                  const isRemoved =
+                                    t?.isRemoved ?? t?.IsRemoved ?? false;
+                                  let state;
+                                  if (
+                                    isRemoved &&
+                                    removedV != null &&
+                                    String(removedV) === String(currentVersion)
+                                  ) {
+                                    state = "removed";
+                                  } else if (
+                                    !isRemoved &&
+                                    addedV != null &&
+                                    String(addedV) === String(currentVersion)
+                                  ) {
+                                    state = "added";
+                                  } else if (!isRemoved) {
+                                    state = "existing";
+                                  } else {
+                                    state = "removed";
+                                  }
+                                  return { code, state };
+                                })
+                                .filter((p) => p.code)
+                                .sort((a, b) => a.code.localeCompare(b.code));
+                              return (
+                                <td
+                                  key={group}
+                                  className={`taskcode_${group} task-cell`}>
+                                  {pills.map((p) => {
+                                    const base = "badge rounded-pill me-1 mb-1";
+                                    let cls, title;
+                                    switch (p.state) {
+                                      case "added":
+                                        cls = base + " bg-success";
+                                        title = "Added in this version";
+                                        break;
+                                      case "removed":
+                                        cls = base + " bg-danger";
+                                        title = "Removed in this version";
+                                        break;
+                                      case "existing":
+                                      default:
+                                        cls = base + " bg-secondary";
+                                        title = "Previously assigned";
+                                        break;
+                                    }
+                                    return (
+                                      <span
+                                        key={p.code}
+                                        className={cls}
+                                        title={title}>
+                                        {p.code}
+                                      </span>
+                                    );
+                                  })}
+                                </td>
+                              );
+                            })}
+                            <td className="text-center">
+                              <button
+                                className="btn btn-sm btn-link text-primary p-0 me-2"
+                                title="Edit Delegations"
+                                onClick={() =>
+                                  console.log("Edit delegations", user)
+                                }>
+                                <i className="bi bi-pencil-square"></i>
+                              </button>
+                              <button
+                                className="btn btn-sm btn-link text-danger p-0"
+                                title="Clear Delegations"
+                                onClick={() =>
+                                  console.log("Clear delegations", user)
+                                }>
+                                <i className="bi bi-trash"></i>
+                              </button>
+                            </td>
                           </tr>
                         );
                       })
@@ -801,7 +1300,7 @@ function DOAVersion() {
                                 Active Users ({activeUsers.length})
                               </h6>
                               {activeUsers.map((user) => {
-                                const userId = getUserIdValue(user);
+                                const userId = user.id ?? user.ID ?? user.userId ?? user.UserId;
                                 if (!userId) {
                                   return null;
                                 }
@@ -851,14 +1350,11 @@ function DOAVersion() {
                                 Non-Active Users ({inactiveUsers.length})
                               </h6>
                               {inactiveUsers.map((user) => {
-                                const userId = getUserIdValue(user);
-                                if (!userId) {
-                                  return null;
-                                }
+                                const userId = user.id ?? user.ID ?? user.userId ?? user.UserId;
+                                if (!userId) return null;
                                 const displayName = resolveDisplayName(user);
                                 const email = user.email ?? user.Email ?? "";
                                 const role = resolveRole(user);
-
                                 return (
                                   <div
                                     key={userId}
@@ -948,13 +1444,25 @@ function DOAVersion() {
               </div>
               <div className="modal-body">
                 <div className="mb-3">
-                  <label className="form-label">
-                    <strong>User:</strong>
+                  <label className="form-label text-muted">
+                    <strong>Email:</strong>
                   </label>
-                  <p className="mb-1">{resolveDisplayName(editingUser)}</p>
-                  <p className="text-muted small">
+                  <p className="text-muted small mb-0">
                     {editingUser.USR_Users?.email ?? "-"}
                   </p>
+                </div>
+                <div className="mb-3">
+                  <label htmlFor="userDisplayName" className="form-label">
+                    Display Name
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="userDisplayName"
+                    value={editedDisplayName}
+                    onChange={(e) => setEditedDisplayName(e.target.value)}
+                    placeholder="Enter display name"
+                  />
                 </div>
                 <div className="mb-3">
                   <label htmlFor="userTitle" className="form-label">
@@ -1037,7 +1545,7 @@ function DOAVersion() {
                       <option value="">-- Select a standard task --</option>
                       {standardTasks.map((task) => {
                         const taskId =
-                          task.id ?? task.Id ?? task.code ?? task.Code;
+                          task.standardId ?? task.Id ?? task.code ?? task.Code;
                         const taskLabel = `${task.code ?? task.Code ?? ""} - ${
                           task.title ??
                           task.Title ??
@@ -1132,6 +1640,173 @@ function DOAVersion() {
                     </>
                   ) : (
                     "Add Task"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Delegation Modal */}
+      {showAddDelegationModal && (
+        <div
+          className="modal show d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+          <div className="modal-dialog modal-xl">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Add Delegations</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={handleCloseAddDelegationModal}></button>
+              </div>
+              <div className="modal-body">
+                <div className="row">
+                  {/* Users List */}
+                  <div className="col-md-6">
+                    <h6 className="mb-3">Users on Study</h6>
+                    <div
+                      className="border rounded p-3"
+                      style={{ maxHeight: "400px", overflowY: "auto" }}>
+                      {users.length === 0 ? (
+                        <p className="text-muted">No users on study</p>
+                      ) : (
+                        users
+                          .slice()
+                          .sort((a, b) => {
+                            const nameA = resolveDisplayName(a).toLowerCase();
+                            const nameB = resolveDisplayName(b).toLowerCase();
+                            return nameA.localeCompare(nameB);
+                          })
+                          .map((user) => {
+                            const userId = getUserIdValue(user);
+                            const displayName = resolveDisplayName(user);
+                            return (
+                              <div key={userId} className="form-check mb-2">
+                                <input
+                                  className="form-check-input"
+                                  type="checkbox"
+                                  id={`del-user-${userId}`}
+                                  checked={selectedDelegationUsers.includes(
+                                    userId
+                                  )}
+                                  onChange={() =>
+                                    handleDelegationUserToggle(userId)
+                                  }
+                                />
+                                <label
+                                  className="form-check-label"
+                                  htmlFor={`del-user-${userId}`}>
+                                  {displayName}
+                                </label>
+                              </div>
+                            );
+                          })
+                      )}
+                    </div>
+                    <div className="mt-2">
+                      <small className="text-muted">
+                        {selectedDelegationUsers.length} user(s) selected
+                      </small>
+                    </div>
+                  </div>
+
+                  {/* Tasks List */}
+                  <div className="col-md-6">
+                    <h6 className="mb-3">Tasks</h6>
+                    <div
+                      className="border rounded p-3"
+                      style={{ maxHeight: "400px", overflowY: "auto" }}>
+                      {tasks.length === 0 ? (
+                        <p className="text-muted">No tasks defined</p>
+                      ) : (
+                        tasks
+                          .slice()
+                          .sort((a, b) => {
+                            const codeA = (
+                              a.task.code ??
+                              a.task.Code ??
+                              ""
+                            ).toLowerCase();
+                            const codeB = (
+                              b.task.code ??
+                              b.task.Code ??
+                              ""
+                            ).toLowerCase();
+                            return codeA.localeCompare(codeB);
+                          })
+                          .map((task) => {
+                            const taskCode =
+                              task.task.code ?? task.task.Code ?? "";
+                            const taskTitle =
+                              task.task.title ??
+                              task.task.Title ??
+                              task.task.name ??
+                              task.task.Name ??
+                              "";
+                            return (
+                              <div key={taskCode} className="form-check mb-2">
+                                <input
+                                  className="form-check-input"
+                                  type="checkbox"
+                                  id={`del-task-${taskCode}`}
+                                  checked={selectedDelegationTasks.includes(
+                                    taskCode
+                                  )}
+                                  onChange={() =>
+                                    handleDelegationTaskToggle(taskCode)
+                                  }
+                                />
+                                <label
+                                  className="form-check-label"
+                                  htmlFor={`del-task-${taskCode}`}>
+                                  <strong>{taskCode}</strong> - {taskTitle}
+                                </label>
+                              </div>
+                            );
+                          })
+                      )}
+                    </div>
+                    <div className="mt-2">
+                      <small className="text-muted">
+                        {selectedDelegationTasks.length} task(s) selected
+                      </small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handleCloseAddDelegationModal}
+                  disabled={addingDelegations}>
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleAddDelegations}
+                  disabled={
+                    addingDelegations ||
+                    selectedDelegationUsers.length === 0 ||
+                    selectedDelegationTasks.length === 0
+                  }>
+                  {addingDelegations ? (
+                    <>
+                      <span
+                        className="spinner-border spinner-border-sm me-2"
+                        role="status"></span>
+                      Adding...
+                    </>
+                  ) : (
+                    `Add ${
+                      selectedDelegationUsers.length *
+                      selectedDelegationTasks.length
+                    } Delegation(s)`
                   )}
                 </button>
               </div>

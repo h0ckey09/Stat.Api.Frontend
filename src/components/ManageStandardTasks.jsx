@@ -17,7 +17,7 @@ function ManageStandardTasks() {
   const [formData, setFormData] = useState({
     code: "",
     title: "",
-    description: ""
+    description: "",
   });
 
   useEffect(() => {
@@ -29,11 +29,13 @@ function ManageStandardTasks() {
       setLoading(true);
       setError(null);
       const response = await doaService.getStandardTasks();
-      setTasks(response.data || []);
+      setTasks(response.data.tasks || []);
     } catch (err) {
       console.error("Error loading standard tasks:", err);
       setError(
-        err.response?.data?.message || err.message || "Failed to load standard tasks"
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to load standard tasks"
       );
     } finally {
       setLoading(false);
@@ -50,7 +52,7 @@ function ManageStandardTasks() {
     setFormData({
       code: task.code || "",
       title: task.title || "",
-      description: task.description || ""
+      description: task.description || "",
     });
     setShowUpdateModal(true);
   };
@@ -105,7 +107,7 @@ function ManageStandardTasks() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   if (loading) {
@@ -149,10 +151,7 @@ function ManageStandardTasks() {
           </p>
         </div>
         <div className="col-auto d-flex align-items-start">
-          <button 
-            className="btn btn-primary mt-3" 
-            onClick={handleAddNew}
-          >
+          <button className="btn btn-primary mt-3" onClick={handleAddNew}>
             Add New
           </button>
         </div>
@@ -175,8 +174,7 @@ function ManageStandardTasks() {
                   <table className="table table-hover mb-0">
                     <thead className="table-light">
                       <tr>
-                        <th>ID</th>
-                        <th>Code</th>
+                                           <th>Code</th>
                         <th>Title</th>
                         <th>Description</th>
                         <th>Actions</th>
@@ -184,12 +182,11 @@ function ManageStandardTasks() {
                     </thead>
                     <tbody>
                       {tasks.map((task) => (
-                        <tr key={task.standardId}>
-                          <td>
-                            <code>{task.standardId}</code>
-                          </td>
+                        <tr key={task.standardId} className={`taskcode_${task.code.replace(/[^A-Za-z]/g, "").toUpperCase()}`}>
                           <td>{task.code}</td>
-                          <td><strong>{task.title}</strong></td>
+                          <td>
+                            <strong>{task.title}</strong>
+                          </td>
                           <td>{task.description}</td>
                           <td>
                             <div className="btn-group" role="group">
@@ -218,21 +215,25 @@ function ManageStandardTasks() {
 
       {/* Add New Task Modal */}
       {showAddModal && (
-        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <div
+          className="modal show d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">Add New Standard Task</h5>
-                <button 
-                  type="button" 
-                  className="btn-close" 
-                  onClick={() => setShowAddModal(false)}
-                ></button>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowAddModal(false)}></button>
               </div>
               <form onSubmit={handleSubmitAdd}>
                 <div className="modal-body">
                   <div className="mb-3">
-                    <label htmlFor="code" className="form-label">Code</label>
+                    <label htmlFor="code" className="form-label">
+                      Code
+                    </label>
                     <input
                       type="text"
                       className="form-control"
@@ -244,7 +245,9 @@ function ManageStandardTasks() {
                     />
                   </div>
                   <div className="mb-3">
-                    <label htmlFor="title" className="form-label">Title</label>
+                    <label htmlFor="title" className="form-label">
+                      Title
+                    </label>
                     <input
                       type="text"
                       className="form-control"
@@ -256,7 +259,9 @@ function ManageStandardTasks() {
                     />
                   </div>
                   <div className="mb-3">
-                    <label htmlFor="description" className="form-label">Description</label>
+                    <label htmlFor="description" className="form-label">
+                      Description
+                    </label>
                     <textarea
                       className="form-control"
                       id="description"
@@ -264,16 +269,14 @@ function ManageStandardTasks() {
                       rows="3"
                       value={formData.description}
                       onChange={handleInputChange}
-                      required
-                    ></textarea>
+                      required></textarea>
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <button 
-                    type="button" 
-                    className="btn btn-secondary" 
-                    onClick={() => setShowAddModal(false)}
-                  >
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setShowAddModal(false)}>
                     Cancel
                   </button>
                   <button type="submit" className="btn btn-primary">
@@ -288,21 +291,25 @@ function ManageStandardTasks() {
 
       {/* Update Task Modal */}
       {showUpdateModal && selectedTask && (
-        <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+        <div
+          className="modal show d-block"
+          tabIndex="-1"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
           <div className="modal-dialog">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">Update Standard Task</h5>
-                <button 
-                  type="button" 
-                  className="btn-close" 
-                  onClick={() => setShowUpdateModal(false)}
-                ></button>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowUpdateModal(false)}></button>
               </div>
               <form onSubmit={handleSubmitUpdate}>
                 <div className="modal-body">
                   <div className="mb-3">
-                    <label htmlFor="update-code" className="form-label">Code</label>
+                    <label htmlFor="update-code" className="form-label">
+                      Code
+                    </label>
                     <input
                       type="text"
                       className="form-control"
@@ -314,7 +321,9 @@ function ManageStandardTasks() {
                     />
                   </div>
                   <div className="mb-3">
-                    <label htmlFor="update-title" className="form-label">Title</label>
+                    <label htmlFor="update-title" className="form-label">
+                      Title
+                    </label>
                     <input
                       type="text"
                       className="form-control"
@@ -326,7 +335,9 @@ function ManageStandardTasks() {
                     />
                   </div>
                   <div className="mb-3">
-                    <label htmlFor="update-description" className="form-label">Description</label>
+                    <label htmlFor="update-description" className="form-label">
+                      Description
+                    </label>
                     <textarea
                       className="form-control"
                       id="update-description"
@@ -334,16 +345,14 @@ function ManageStandardTasks() {
                       rows="3"
                       value={formData.description}
                       onChange={handleInputChange}
-                      required
-                    ></textarea>
+                      required></textarea>
                   </div>
                 </div>
                 <div className="modal-footer">
-                  <button 
-                    type="button" 
-                    className="btn btn-secondary" 
-                    onClick={() => setShowUpdateModal(false)}
-                  >
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setShowUpdateModal(false)}>
                     Cancel
                   </button>
                   <button type="submit" className="btn btn-primary">

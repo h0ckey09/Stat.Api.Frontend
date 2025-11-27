@@ -1,3 +1,4 @@
+
 import api from "./apiService";
 
 // Resolve API base to keep the DOA endpoints aligned with the backend server
@@ -25,33 +26,51 @@ const doaService = {
   },
 
   addUserToDoa: (data) => {
-    return api.post(`${DOA_BASE_PATH}/AddUserToDoa/`, data);
+    return api.post(`${DOA_BASE_PATH}/AddUserToDoa/${data.studyId}`, data);
   },
 
   removeUserFromDoa: (data) => {
-    return api.post(`${DOA_BASE_PATH}/RemoveUserFromDoa/`, data);
+    return api.post(`${DOA_BASE_PATH}/RemoveUserFromDoa/${data.studyId}`, data);
   },
 
-   // call /api/v1/doa/UpdateUserTitle
-      // body = { studyId: id, userId: editingUser.userId, title: editedTitle }
-  updateUserTitle: (data) => {
-    return api.post(`${DOA_BASE_PATH}/UpdateUserTitle/`, data);
+  // call /api/v1/doa/UpdateUserTitle
+  // body = { studyId: id, userId: editingUser.userId, title: editedTitle, displayName: editedDisplayName }
+  updateUserInfo: (data) => {
+    return api.post(`${DOA_BASE_PATH}/${data.studyId}/UpdateUser/`, data);
   },
 
   addTaskToDoa: (data) => {
-    return api.post(`${DOA_BASE_PATH}/AddTaskToDoa/`, data);
+    return api.post(`${DOA_BASE_PATH}/AddTaskToDoa/${data.studyId}`, data);
   },
 
   removeTaskFromDoa: (data) => {
-    return api.post(`${DOA_BASE_PATH}/RemoveTaskFromDoa/`, data);
+    return api.post(`${DOA_BASE_PATH}/RemoveTaskFromDoa/${data.studyId}`, data);
   },
 
-  getStandardTasks: () => {
-    return api.post(`${DOA_BASE_PATH}/getStandardTasks`);
+  /**
+   * Add delegations (batch)
+   * Endpoint: /api/v1/doa/:studyId/addDelegation
+   * Body: { delegations: [ { userId: number, taskCode: string }, ... ] }
+   */
+  addDelegations: (studyId, delegations) => {
+    return api.post(`${DOA_BASE_PATH}/${encodeURIComponent(studyId)}/addDelegation`, {
+      delegations,
+    });
+  },
+
+  /**
+   * Remove delegations (batch)
+   * Endpoint: /api/v1/doa/:studyId/removeDelegation
+   * Body: { delegations: [ { userId: number, taskCode: string }, ... ] }
+   */
+  removeDelegations: (studyId, delegations) => {
+    return api.post(`${DOA_BASE_PATH}/${encodeURIComponent(studyId)}/removeDelegation`, {
+      delegations,
+    });
   },
 
   finalizeDoa: (params) => {
-    return api.post(`${DOA_BASE_PATH}/FinalizeDoa/`, null, {
+    return api.post(`${DOA_BASE_PATH}/${params.studyId}/finalize`, {}, {
       params,
     });
   },
@@ -84,7 +103,7 @@ const doaService = {
         options,
         { responseType: 'blob' }
       );
-      
+
       // Trigger download
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
@@ -94,7 +113,7 @@ const doaService = {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      
+
       return response;
     } catch (error) {
       console.error('Error downloading change-only DOA PDF:', error);
@@ -136,6 +155,15 @@ const doaService = {
    */
   newStandardTask: (data) => {
     return api.post(`${DOA_BASE_PATH}/newStandardTask`, data);
+  },
+
+  /**
+   * Get requirements enum
+   * Returns a list of requirement options that can be assigned to tasks
+   * @returns {Promise<{message: string, data: Array<{id: number, description: string}>}>}
+   */
+  getRequirementsEnum: () => {
+    return api.get(`${DOA_BASE_PATH}/requirementsEnum`);
   }
 };
 

@@ -28,49 +28,24 @@ const resolveStudyName = (study) => {
   );
 };
 
-const buildStudyTasks = (record, versions) => {
+const buildStudyTasks = (record) => {
   if (!record) return [];
-  const versionList = versions || [];
-  const tasks = new Map();
 
-  versionList.forEach((version) => {
-    const versionLabel = getVersionIdentifier(version);
-    const tasksFromVersion =
-      version?.taskCodes ??
-      version?.TaskCodes ??
-      (version?.entries
-        ? version.entries
-            .map((entry) => entry?.task)
-            .filter((task) => !!task)
-        : []);
+  let tasks = [];
 
-    tasksFromVersion.forEach((task, index) => {
-      const code =
-        task?.code ??
-        task?.Code ??
-        task?.taskCode ??
-        task?.TaskCode ??
-        `task-${index}`;
-      const title =
-        task?.title ?? task?.Title ?? task?.name ?? task?.Name ?? "Untitled";
-      const description =
-        task?.description ?? task?.Description ?? task?.details ?? "";
-      const key = code || `${title}-${index}`;
-      const existing = tasks.get(key) ?? {
-        code,
-        title,
-        description,
-        versions: new Set(),
-      };
-      existing.versions.add(versionLabel);
-      tasks.set(key, existing);
-    });
+  if (record.currentVersion) {
+    tasks = record.currentVersion.compiledSnapshot.taskCodes || [];
+  }
+  if (record.pendingVersion) {
+    tasks = record.pendingVersion.compiledSnapshot.taskCodes || [];
+  }
+
+  // Make a shallow copy to avoid mutating original data
+  return [...tasks].sort((a, b) => {
+    if (a.code < b.code) return -1;
+    if (a.code > b.code) return 1;
+    return 0;
   });
-
-  return Array.from(tasks.values()).map((task) => ({
-    ...task,
-    versions: Array.from(task.versions),
-  }));
 };
 
 function DOAVersions() {
@@ -90,10 +65,7 @@ function DOAVersions() {
     }
   }, [id]);
 
-  const studyTasks = useMemo(() => buildStudyTasks(record, versions), [
-    record,
-    versions,
-  ]);
+  const studyTasks = useMemo(() => buildStudyTasks(record), [record]);
 
   const loadStudyAndVersions = async () => {
     try {
@@ -102,19 +74,8 @@ function DOAVersions() {
       const response = await doaService.getStudyDoa(id);
       const payload = response.data || {};
       setRecord(payload);
-      setStudy(
-        payload.studyInfo ??
-          payload.StudyInfo ??
-          payload.study ??
-          payload.Study ??
-          null
-      );
-      const rawVersions =
-        payload.versions ??
-        payload.Versions ??
-        payload.DoaVersions ??
-        payload.doaVersions ??
-        [];
+      setStudy(payload.studyInfo ?? null);
+      const rawVersions = payload.versions ?? [];
       const sortedVersions = [...rawVersions].sort((a, b) => {
         const aValue = Number(
           a?.versionNumber ?? a?.version ?? a?.Version ?? a?.id ?? 0
@@ -125,22 +86,14 @@ function DOAVersions() {
         return bValue - aValue;
       });
       setVersions(sortedVersions);
-      setCurrentVersion(
-        payload.currentVersion ??
-          payload.CurrentVersion ??
-          payload.current ??
-          null
-      );
-      setPendingVersion(
-        payload.pendingVersion ??
-          payload.PendingVersion ??
-          payload.pending ??
-          null
-      );
+      setCurrentVersion(payload.currentVersion ?? null);
+      setPendingVersion(payload.pendingVersion ?? null);
     } catch (err) {
       console.error("Error loading study and DOA versions:", err);
       setError(
-        err.response?.data?.message || err.message || "Failed to load DOA versions"
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to load DOA versions"
       );
     } finally {
       setLoading(false);
@@ -225,7 +178,9 @@ function DOAVersions() {
           )}
         </div>
         <div className="col-auto d-flex flex-column gap-2">
-          <button className="btn btn-outline-primary" onClick={handleViewDelegatedUsers}>
+          <button
+            className="btn btn-outline-primary"
+            onClick={handleViewDelegatedUsers}>
             View Delegated Users
           </button>
         </div>
@@ -272,7 +227,9 @@ function DOAVersions() {
                             version?.finalizedAt ??
                             version?.FinalizedAt;
                           const isFinalized =
-                            version?.isFinalized ?? version?.IsFinalized ?? false;
+                            version?.isFinalized ??
+                            version?.IsFinalized ??
+                            false;
                           const userCount =
                             version?.usersOnStudy?.length ??
                             version?.UsersOnStudy?.length ??
@@ -354,22 +311,37 @@ function DOAVersions() {
                             </td>
                           </tr>
                         ) : (
-                          studyTasks.map((task) => (
-                            <tr key={task.code}>
-                              <td>{task.code}</td>
-                              <td>{task.title}</td>
-                              <td>
-                                {task.description
-                                  ? task.description
-                                  : "-"}
-                              </td>
-                              <td>
-                                <span className="text-nowrap">
-                                  {task.versions.join(", ")}
-                                </span>
-                              </td>
-                            </tr>
-                          ))
+                          studyTasks.map((task) => {
+                            const taskCode = task.task.code;
+                            const codeLetters = taskCode
+                              .replace(/[^A-Za-z]/g, "")
+                              .toUpperCase();
+                            const rowClass = codeLetters
+                              ? `taskcode_${codeLetters}`
+                              : "";
+
+                            return (
+                              <tr key={taskCode} className={rowClass}>
+                                <td>{taskCode}</td>
+                                <td>{task.task.title}</td>
+                                <td>
+                                  {task.task.description
+                                    ? task.task.description
+                                    : "-"}
+                                </td>
+                                <td>
+                                  <span className="badge rounded-pill bg-success">
+                                    v{task.addedVersion}
+                                  </span>
+                                  {task.removedVersion && (
+                                    <span className="badge rounded-pill bg-danger ms-2">
+                                      v{task.removedVersion}
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })
                         )}
                       </tbody>
                     </table>

@@ -17,7 +17,7 @@ var API_BASE_URL = (function () {
 // Send authentication token if available
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json'
   },
@@ -52,12 +52,32 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Handle 401 separately for auth redirects
     if (error.response?.status === 401) {
-      // Handle unauthorized access
-      //localStorage.removeItem('authToken');
-      //window.location.href = '/login';
-      window.alert('Got a 401 from the server..??');
+      // Skip redirect if this request has skipAuthRedirect flag (e.g., validateSession)
+      if (error.config?.skipAuthRedirect) {
+        return Promise.reject(error);
+      }
+      // Save current location for redirect after login
+      const currentPath = window.location.pathname + window.location.search + window.location.hash;
+      if (!window.location.pathname.startsWith('/login')) {
+        sessionStorage.setItem('redirectAfterLogin', currentPath);
+        window.location.href = '/login';
+      }
+      return Promise.reject(error);
     }
+
+    // For all other non-2xx responses, show error toast if handler is registered
+    if (error.response && window.__showErrorToast) {
+      const status = error.response.status;
+      const message = error.response.data?.message ||
+        error.response.data?.error ||
+        error.response.statusText ||
+        `Request failed with status ${status}`;
+
+      window.__showErrorToast(message);
+    }
+
     return Promise.reject(error);
   }
 );
@@ -77,6 +97,18 @@ export const apiService = {
   post: (endpoint, data) => api.post(endpoint, data),
   put: (endpoint, data) => api.put(endpoint, data),
   delete: (endpoint) => api.delete(endpoint),
+
+
+  /**
+ * Validate user session
+ * @returns {Promise<{name: string, ...}>} user info if valid, error if not
+ */
+  validateSession: () => {
+    return api.get(`${API_BASE_URL}/api/v1/users/ValidateSession`, {
+      skipAuthRedirect: true
+    });
+  },
+
 
   // Method to discover available endpoints
   discoverEndpoints: async () => {

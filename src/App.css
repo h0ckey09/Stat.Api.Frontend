@@ -2,3 +2,57 @@
   min-height: 100vh;
   background-color: #f8f9fa;
 }
+
+/* Task Code Row Styles with Solid Backgrounds */
+/* Override Bootstrap's default td background to inherit from tr */
+.taskcode_A td,
+.taskcode_D td,
+.taskcode_IP td,
+.taskcode_L td,
+.taskcode_P td,
+.taskcode_R td,
+.taskcode_Z td {
+  background-color: inherit !important;
+}
+
+.task-cell {
+  text-align: center;
+  vertical-align: middle;
+  border-left: 1px solid #e9ecef;
+  border-right: 1px solid #e9ecef;
+}
+
+.taskcode_A,
+td.taskcode_A {
+  background-color: rgb(231, 249, 255) !important;
+}
+
+.taskcode_D,
+td.taskcode_D {
+  background-color: rgb(255, 237, 212) !important;
+}
+
+.taskcode_IP,
+td.taskcode_IP {
+  background-color: rgb(255, 255, 153) !important;
+}
+
+.taskcode_L,
+td.taskcode_L {
+  background-color: rgb(255, 182, 237) !important;
+}
+
+.taskcode_P,
+td.taskcode_P {
+  background-color: rgb(144, 238, 144) !important;
+}
+
+.taskcode_R,
+td.taskcode_R {
+  background-color: rgb(30, 247, 247) !important;
+}
+
+.taskcode_Z,
+td.taskcode_Z {
+  background-color: rgb(200, 200, 200) !important;
+}

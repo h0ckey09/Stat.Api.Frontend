@@ -16,6 +16,7 @@ import DOAView from "./components/DOAView";
 import DOAVersion from "./components/DOAVersion";
 import ManageStandardTasks from "./components/ManageStandardTasks";
 import Layout from "./components/Layout";
+import ToastProvider from "./components/ToastProvider";
 import "./App.css";
 
 // Protected Route component
@@ -120,7 +121,9 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <AppContent />
+        <ToastProvider>
+          <AppContent />
+        </ToastProvider>
       </AuthProvider>
     </Router>
   );

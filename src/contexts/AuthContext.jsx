@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { apiService } from "../services/apiService";
 
 const AuthContext = createContext();
 
@@ -22,12 +23,17 @@ export const AuthProvider = ({ children }) => {
       if (window.Auth) {
         setAuthModule(window.Auth);
         await window.Auth.init();
-
-        // Check if already logged in
-        if (window.Auth.isLoggedIn()) {
-          const currentUser = window.Auth.getUser();
-          setUser(currentUser);
+      }
+      // Always validate session on load
+      try {
+        const resp = await apiService.validateSession();
+        if (resp && resp.data && resp.data.user) {
+          setUser(resp.data.user);
+        } else {
+          setUser(null);
         }
+      } catch (err) {
+        setUser(null);
       }
       setLoading(false);
     };
