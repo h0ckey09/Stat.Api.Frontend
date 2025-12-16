@@ -1,33 +1,18 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import doaService from "../services/doaService";
+import {
+  formatDate,
+  getVersionIdentifier,
+  resolveStudyName,
+  getCodeLetters,
+} from "../utils/doaUtils";
 
-const formatDate = (value) => {
-  if (!value) return "-";
-  return new Date(value).toLocaleDateString();
-};
-
-const getVersionIdentifier = (version) => {
-  return (
-    version?.versionNumber ??
-    version?.version ??
-    version?.Version ??
-    version?.id ??
-    version?.Id ??
-    "-"
-  );
-};
-
-const resolveStudyName = (study) => {
-  return (
-    study?.studyName ??
-    study?.StudyName ??
-    study?.name ??
-    study?.Study_Title ??
-    "Study"
-  );
-};
-
+/**
+ * Helper function to build and sort study tasks from DOA record
+ * @param {Object} record - The DOA record containing version data
+ * @returns {Array} Sorted array of task codes
+ */
 const buildStudyTasks = (record) => {
   if (!record) return [];
 
@@ -48,6 +33,20 @@ const buildStudyTasks = (record) => {
   });
 };
 
+/**
+ * DOAVersions Component
+ * 
+ * Displays a list of all DOA versions for a specific study.
+ * Allows users to:
+ * - View all versions (sorted by version number descending)
+ * - See version metadata (created date, finalized date, status)
+ * - Navigate to specific version details
+ * - Download version PDFs
+ * - View delegated users for the study
+ * - See all study tasks across versions
+ * 
+ * @component
+ */
 function DOAVersions() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -313,9 +312,7 @@ function DOAVersions() {
                         ) : (
                           studyTasks.map((task) => {
                             const taskCode = task.task.code;
-                            const codeLetters = taskCode
-                              .replace(/[^A-Za-z]/g, "")
-                              .toUpperCase();
+                            const codeLetters = getCodeLetters(taskCode);
                             const rowClass = codeLetters
                               ? `taskcode_${codeLetters}`
                               : "";

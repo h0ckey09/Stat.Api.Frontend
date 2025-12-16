@@ -2,41 +2,31 @@ import React, { useState, useEffect } from "react";
 import useToast from "../hooks/useToast";
 import { useParams, useNavigate } from "react-router-dom";
 import doaService from "../services/doaService";
+import {
+  formatDateTime,
+  resolveDisplayName,
+  resolveRole,
+  getDoaUserIdValue,
+  getVersionIdentifier,
+  getCodeLetters,
+} from "../utils/doaUtils";
 
-const formatDateTime = (value) => {
-  if (!value) return "-";
-  return new Date(value).toLocaleString();
-};
-
-const resolveDisplayName = (user) => {
-  if (!user) return "Unknown";
-  return (
-    (user.displayName ??
-      user.name ??
-      `${user.FirstName ?? ""} ${user.LastName ?? ""}`.trim()) ||
-    "-"
-  );
-};
-
-const resolveRole = (user) =>
-  user?.titleOrRole ?? user?.Title ?? user?.role ?? user?.Role ?? "-";
-
-const getDoaUserIdValue = (user) => {
-  if (!user) return null;
-  return user.doaUserId;
-};
-
-const getVersionIdentifier = (version) => {
-  return (
-    version?.versionNumber ??
-    version?.version ??
-    version?.Version ??
-    version?.id ??
-    version?.Id ??
-    null
-  );
-};
-
+/**
+ * DOAVersion Component
+ * 
+ * Displays and manages a specific version of a DOA (Delegation of Authority) for a study.
+ * Allows users to:
+ * - View version details and metadata
+ * - Add/remove people from the study
+ * - Edit user titles and roles
+ * - Add tasks to the DOA
+ * - Create delegations (assign tasks to users)
+ * - Finalize the DOA version
+ * - View changes made in this version
+ * - View assignments organized by task groups
+ * 
+ * @component
+ */
 function DOAVersion() {
   const toast = useToast();
   const { id, versionNumber } = useParams();
@@ -276,12 +266,7 @@ function DOAVersion() {
         displayName: editedDisplayName,
       });
 
-      console.log("Updating user title:", {
-        studyId: id,
-        userId,
-        title: editedTitle,
-      });
-
+      toast.success("User information updated successfully!");
       handleCloseEditUserModal();
       await loadDOAVersion();
     } catch (err) {
@@ -316,6 +301,7 @@ function DOAVersion() {
         studyId: id,
         userId,
       });
+      toast.success(`Successfully removed ${displayName} from the study.`);
       await loadDOAVersion();
     } catch (err) {
       console.error("Error removing user from study:", err);
@@ -408,7 +394,7 @@ function DOAVersion() {
         standardTaskId: standardTaskId || null,
       });
 
-      //alert("Task added successfully!");
+      toast.success(`Task "${taskCode}" added successfully!`);
       handleCloseAddTaskModal();
       await loadDOAVersion();
     } catch (err) {
@@ -566,8 +552,6 @@ function DOAVersion() {
   const entries = snapshot?.entries ?? [];
 
   // Build dynamic task-group columns from tasks (letters-only portion of code)
-  const getCodeLetters = (code) =>
-    (code || "").replace(/[^A-Za-z]/g, "").toUpperCase();
   const taskGroups = Array.from(
     new Set(
       tasks
@@ -1682,7 +1666,7 @@ function DOAVersion() {
                             return nameA.localeCompare(nameB);
                           })
                           .map((user) => {
-                            const userId = getUserIdValue(user);
+                            const userId = getDoaUserIdValue(user);
                             const displayName = resolveDisplayName(user);
                             return (
                               <div key={userId} className="form-check mb-2">

@@ -1,25 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import doaService from "../services/doaService";
+import { formatDate, resolveDisplayName, resolveRole } from "../utils/doaUtils";
 
-const formatDate = (value) => {
-  if (!value) return "-";
-  return new Date(value).toLocaleDateString();
-};
-
-const resolveDisplayName = (user) => {
-  if (!user) return "Unknown";
-  return (
-    (user.displayName ??
-    user.name ??
-    `${user.FirstName ?? ""} ${user.LastName ?? ""}`.trim()) ||
-    "-"
-  );
-};
-
-const resolveRole = (user) =>
-  user?.titleOrRole ?? user?.Title ?? user?.role ?? user?.Role ?? "-";
-
+/**
+ * DOAView Component
+ * 
+ * Displays a read-only view of the current DOA for a study.
+ * Shows:
+ * - Current version information
+ * - Study details
+ * - Delegation entries (users and their assigned tasks)
+ * - Task codes defined in the DOA
+ * 
+ * Note: "Add Task" and "Add Delegate" actions are not implemented yet.
+ * 
+ * @component
+ */
 function DOAView() {
   const { id } = useParams();
   const navigate = useNavigate();
