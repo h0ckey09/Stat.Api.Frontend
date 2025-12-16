@@ -2,40 +2,14 @@ import React, { useState, useEffect } from "react";
 import useToast from "../hooks/useToast";
 import { useParams, useNavigate } from "react-router-dom";
 import doaService from "../services/doaService";
-
-const formatDateTime = (value) => {
-  if (!value) return "-";
-  return new Date(value).toLocaleString();
-};
-
-const resolveDisplayName = (user) => {
-  if (!user) return "Unknown";
-  return (
-    (user.displayName ??
-      user.name ??
-      `${user.FirstName ?? ""} ${user.LastName ?? ""}`.trim()) ||
-    "-"
-  );
-};
-
-const resolveRole = (user) =>
-  user?.titleOrRole ?? user?.Title ?? user?.role ?? user?.Role ?? "-";
-
-const getDoaUserIdValue = (user) => {
-  if (!user) return null;
-  return user.doaUserId;
-};
-
-const getVersionIdentifier = (version) => {
-  return (
-    version?.versionNumber ??
-    version?.version ??
-    version?.Version ??
-    version?.id ??
-    version?.Id ??
-    null
-  );
-};
+import {
+  formatDateTime,
+  resolveDisplayName,
+  resolveRole,
+  getDoaUserIdValue,
+  getVersionIdentifier,
+  getCodeLetters,
+} from "../utils/doaUtils";
 
 function DOAVersion() {
   const toast = useToast();
@@ -566,8 +540,6 @@ function DOAVersion() {
   const entries = snapshot?.entries ?? [];
 
   // Build dynamic task-group columns from tasks (letters-only portion of code)
-  const getCodeLetters = (code) =>
-    (code || "").replace(/[^A-Za-z]/g, "").toUpperCase();
   const taskGroups = Array.from(
     new Set(
       tasks

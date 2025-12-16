@@ -1,24 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import doaService from "../services/doaService";
-
-const formatDate = (value) => {
-  if (!value) return "-";
-  return new Date(value).toLocaleDateString();
-};
-
-const resolveDisplayName = (user) => {
-  if (!user) return "Unknown";
-  return (
-    (user.displayName ??
-    user.name ??
-    `${user.FirstName ?? ""} ${user.LastName ?? ""}`.trim()) ||
-    "-"
-  );
-};
-
-const resolveRole = (user) =>
-  user?.titleOrRole ?? user?.Title ?? user?.role ?? user?.Role ?? "-";
+import { formatDate, resolveDisplayName, resolveRole } from "../utils/doaUtils";
 
 function DOAView() {
   const { id } = useParams();
