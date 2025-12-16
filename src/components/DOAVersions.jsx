@@ -8,6 +8,11 @@ import {
   getCodeLetters,
 } from "../utils/doaUtils";
 
+/**
+ * Helper function to build and sort study tasks from DOA record
+ * @param {Object} record - The DOA record containing version data
+ * @returns {Array} Sorted array of task codes
+ */
 const buildStudyTasks = (record) => {
   if (!record) return [];
 
@@ -28,6 +33,20 @@ const buildStudyTasks = (record) => {
   });
 };
 
+/**
+ * DOAVersions Component
+ * 
+ * Displays a list of all DOA versions for a specific study.
+ * Allows users to:
+ * - View all versions (sorted by version number descending)
+ * - See version metadata (created date, finalized date, status)
+ * - Navigate to specific version details
+ * - Download version PDFs
+ * - View delegated users for the study
+ * - See all study tasks across versions
+ * 
+ * @component
+ */
 function DOAVersions() {
   const { id } = useParams();
   const navigate = useNavigate();

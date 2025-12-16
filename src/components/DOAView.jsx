@@ -3,6 +3,20 @@ import { useParams, useNavigate } from "react-router-dom";
 import doaService from "../services/doaService";
 import { formatDate, resolveDisplayName, resolveRole } from "../utils/doaUtils";
 
+/**
+ * DOAView Component
+ * 
+ * Displays a read-only view of the current DOA for a study.
+ * Shows:
+ * - Current version information
+ * - Study details
+ * - Delegation entries (users and their assigned tasks)
+ * - Task codes defined in the DOA
+ * 
+ * Note: "Add Task" and "Add Delegate" actions are not implemented yet.
+ * 
+ * @component
+ */
 function DOAView() {
   const { id } = useParams();
   const navigate = useNavigate();
