@@ -1666,7 +1666,7 @@ function DOAVersion() {
                             return nameA.localeCompare(nameB);
                           })
                           .map((user) => {
-                            const userId = getUserIdValue(user);
+                            const userId = getDoaUserIdValue(user);
                             const displayName = resolveDisplayName(user);
                             return (
                               <div key={userId} className="form-check mb-2">

@@ -39,12 +39,17 @@ export const formatDateTime = (value) => {
  */
 export const resolveDisplayName = (user) => {
   if (!user) return "Unknown";
-  return (
-    (user.displayName ??
-    user.name ??
-    `${user.FirstName ?? ""} ${user.LastName ?? ""}`.trim()) ||
-    "-"
-  );
+  
+  // Try displayName or name first
+  if (user.displayName) return user.displayName;
+  if (user.name) return user.name;
+  
+  // Try constructing from first and last name
+  const fullName = `${user.FirstName ?? ""} ${user.LastName ?? ""}`.trim();
+  if (fullName) return fullName;
+  
+  // Fallback to dash
+  return "-";
 };
 
 /**
@@ -112,12 +117,15 @@ export const getCodeLetters = (code) => {
 
 /**
  * Check if a string is a valid email
+ * Uses a more comprehensive regex pattern that handles most valid email formats
  * @param {string} email - The email to validate
  * @returns {boolean} True if valid email format
  */
 export const isValidEmail = (email) => {
   if (!email) return false;
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  // More comprehensive email regex that handles most valid formats
+  // Including subdomains, special characters, and international domains
+  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
   return emailRegex.test(email);
 };
 
