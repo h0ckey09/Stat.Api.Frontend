@@ -116,17 +116,20 @@ export const getCodeLetters = (code) => {
 };
 
 /**
+ * Comprehensive email validation regex
+ * Handles most valid email formats including subdomains, special characters, and international domains
+ */
+const EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+
+/**
  * Check if a string is a valid email
- * Uses a more comprehensive regex pattern that handles most valid email formats
+ * Uses a comprehensive regex pattern that handles most valid email formats
  * @param {string} email - The email to validate
  * @returns {boolean} True if valid email format
  */
 export const isValidEmail = (email) => {
   if (!email) return false;
-  // More comprehensive email regex that handles most valid formats
-  // Including subdomains, special characters, and international domains
-  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
-  return emailRegex.test(email);
+  return EMAIL_REGEX.test(email);
 };
 
 /**
