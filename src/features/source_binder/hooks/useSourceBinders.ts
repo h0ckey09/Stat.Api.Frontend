@@ -161,11 +161,8 @@ export const useSourceBinder = (id: string | number | undefined) => {
     }
   }, [id]);
 
-  useEffect(() => {
-    if (id) {
-      loadSourceBinder();
-    }
-  }, [id, loadSourceBinder]);
+  // Removed automatic loading - let the component control when to load
+  // This prevents double-loading when used with component useEffect
 
   return {
     sourceBinder,
@@ -268,11 +265,8 @@ export const useSourcePages = (binderId: string | number | undefined) => {
     setError('');
   }, []);
 
-  useEffect(() => {
-    if (binderId) {
-      loadSourcePages();
-    }
-  }, [binderId, loadSourcePages]);
+  // Removed automatic loading - let the component control when to load
+  // This prevents double-loading when used with component useEffect
 
   return {
     sourcePages,

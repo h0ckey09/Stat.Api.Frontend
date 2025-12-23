@@ -143,6 +143,36 @@ var Auth = (function () {
             return data; // Return the full response including user object
         }).catch(function (err) {
             console.error('[Auth] Exchange error:', err);
+            
+            // Check if this is a server connectivity issue
+            if (err.message.includes('fetch') || 
+                err.message.includes('NetworkError') ||
+                err.message.includes('Failed to fetch') ||
+                err.message.toLowerCase().includes('connection') ||
+                err.message.includes('ECONNREFUSED') ||
+                err.message.includes('timeout') ||
+                err.name === 'TypeError') {
+                
+                console.error('[Auth] 🔴 SERVER CONNECTIVITY ISSUE DETECTED DURING TOKEN EXCHANGE');
+                
+                // Dispatch a special server error event
+                try {
+                    var serverErrorEvent = new CustomEvent('serverError', { 
+                        detail: { 
+                            type: 'connectivity',
+                            message: 'Unable to connect to the authentication server. Please check if the server is running and try again.',
+                            originalError: err.message,
+                            context: 'Google OAuth token exchange'
+                        } 
+                    });
+                    window.dispatchEvent(serverErrorEvent);
+                } catch (e) { 
+                    console.error('Failed to dispatch server error event:', e); 
+                }
+                
+                throw new Error('SERVER_DISCONNECTED');
+            }
+            
             throw err;
         });
     }
@@ -331,6 +361,37 @@ var Auth = (function () {
             const data = await res.json();
             setLocalUser(data.user);
             return data;
+        }).catch(function (err) {
+            console.error('[Auth] Validation error:', err);
+            
+            // Check if this is a server connectivity issue
+            if (err.message.includes('fetch') || 
+                err.message.includes('NetworkError') ||
+                err.message.includes('Failed to fetch') ||
+                err.message.toLowerCase().includes('connection') ||
+                err.message.includes('ECONNREFUSED') ||
+                err.message.includes('timeout') ||
+                err.name === 'TypeError') {
+                
+                console.error('[Auth] 🔴 SERVER CONNECTIVITY ISSUE DETECTED DURING VALIDATION');
+                
+                // Dispatch a special server error event
+                try {
+                    var serverErrorEvent = new CustomEvent('serverError', { 
+                        detail: { 
+                            type: 'connectivity',
+                            message: 'Unable to connect to the authentication server for session validation. Please check if the server is running.',
+                            originalError: err.message,
+                            context: 'Session validation'
+                        } 
+                    });
+                    window.dispatchEvent(serverErrorEvent);
+                } catch (e) { 
+                    console.error('Failed to dispatch server error event:', e); 
+                }
+            }
+            
+            throw err;
         });
     }
 

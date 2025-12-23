@@ -7,26 +7,91 @@ const getApiUrl = (endpoint) => {
   return endpoint; // relative path for production
 };
 
+// Helper to get token from storage with expiry check
+const getTokenFromStorage = () => {
+  // Try sessionStorage first
+  const sessionItem = sessionStorage.getItem('statSessionToken');
+  if (sessionItem) {
+    try {
+      const parsed = JSON.parse(sessionItem);
+      const now = new Date().getTime();
+      if (now <= parsed.expiry) {
+        return parsed.token;
+      }
+    } catch (e) {
+      // Old format, might be just a string - remove it
+      sessionStorage.removeItem('statSessionToken');
+    }
+  }
+  
+  // Try localStorage
+  const localItem = localStorage.getItem('authToken');
+  if (localItem) {
+    try {
+      const parsed = JSON.parse(localItem);
+      const now = new Date().getTime();
+      if (now <= parsed.expiry) {
+        return parsed.token;
+      }
+    } catch (e) {
+      // Old format, might be just a string - remove it
+      localStorage.removeItem('authToken');
+    }
+  }
+  
+  return null;
+};
+
+// Helper to perform authenticated GET requests with fallback to manual fetch
+const authGet = async (endpoint) => {
+  const Auth = window.Auth;
+  const token = getTokenFromStorage();
+  
+  // Use Auth object if available, otherwise use fetch with manual auth
+  if (Auth && typeof Auth.authGet === 'function' && Auth.isLoggedIn()) {
+    return await Auth.authGet(endpoint);
+  } else if (token) {
+    // Fallback to manual fetch with token headers
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } else {
+    throw new Error('Authentication not available');
+  }
+};
+
+// Helper to check if authentication is available
+const isAuthAvailable = () => {
+  const Auth = window.Auth;
+  const token = getTokenFromStorage();
+  
+  return (Auth && Auth.isLoggedIn()) || token !== null;
+};
+
 export const sourcePageApi = {
   /**
    * Fetch all source pages
    * @returns {Promise<Array>} List of source pages
    */
   getSourcePages: async () => {
-    const Auth = window.Auth;
-    
-    if (!Auth) {
+    if (!isAuthAvailable()) {
       throw new Error('Authentication not available');
-    }
-
-    if (!Auth.isLoggedIn()) {
-      throw new Error('Not authenticated');
     }
 
     const endpoint = getApiUrl('/api/v1/source/ListPages');
     console.log('📡 Fetching source pages from:', endpoint);
     
-    const data = await Auth.authGet(endpoint);
+    const data = await authGet(endpoint);
     console.log('✅ Source pages loaded:', data);
     
     return data || [];
@@ -38,20 +103,14 @@ export const sourcePageApi = {
    * @returns {Promise<Array>} List of source pages for the binder
    */
   getSourcePagesByBinder: async (binderId) => {
-    const Auth = window.Auth;
-    
-    if (!Auth) {
+    if (!isAuthAvailable()) {
       throw new Error('Authentication not available');
-    }
-
-    if (!Auth.isLoggedIn()) {
-      throw new Error('Not authenticated');
     }
 
     const endpoint = getApiUrl(`/api/v1/source/GetBinderPages/${binderId}`);
     console.log('📡 Fetching source pages for binder from:', endpoint);
     
-    const data = await Auth.authGet(endpoint);
+    const data = await authGet(endpoint);
     console.log('✅ Source pages for binder loaded:', data);
     
     return data || [];
@@ -63,20 +122,14 @@ export const sourcePageApi = {
    * @returns {Promise<Object>} Source page details
    */
   getSourcePageById: async (pageId) => {
-    const Auth = window.Auth;
-    
-    if (!Auth) {
+    if (!isAuthAvailable()) {
       throw new Error('Authentication not available');
-    }
-
-    if (!Auth.isLoggedIn()) {
-      throw new Error('Not authenticated');
     }
 
     const endpoint = getApiUrl(`/api/v1/source/GetPage/${pageId}`);
     console.log('📡 Fetching source page details from:', endpoint);
     
-    const data = await Auth.authGet(endpoint);
+    const data = await authGet(endpoint);
     console.log('✅ Source page details loaded:', data);
     
     return data;

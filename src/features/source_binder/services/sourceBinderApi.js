@@ -23,20 +23,85 @@ const handleAuthError = (error, operation) => {
   throw new Error('Authentication required');
 };
 
+// Helper to get token from storage with expiry check
+const getTokenFromStorage = () => {
+  // Try sessionStorage first
+  const sessionItem = sessionStorage.getItem('statSessionToken');
+  if (sessionItem) {
+    try {
+      const parsed = JSON.parse(sessionItem);
+      const now = new Date().getTime();
+      if (now <= parsed.expiry) {
+        return parsed.token;
+      }
+    } catch (e) {
+      // Old format, might be just a string - remove it
+      sessionStorage.removeItem('statSessionToken');
+    }
+  }
+  
+  // Try localStorage
+  const localItem = localStorage.getItem('authToken');
+  if (localItem) {
+    try {
+      const parsed = JSON.parse(localItem);
+      const now = new Date().getTime();
+      if (now <= parsed.expiry) {
+        return parsed.token;
+      }
+    } catch (e) {
+      // Old format, might be just a string - remove it
+      localStorage.removeItem('authToken');
+    }
+  }
+  
+  return null;
+};
+
+// Helper to perform authenticated GET requests with fallback to manual fetch
+const authGet = async (endpoint) => {
+  const Auth = window.Auth;
+  const token = getTokenFromStorage();
+  
+  // Use Auth object if available, otherwise use fetch with manual auth
+  if (Auth && typeof Auth.authGet === 'function' && Auth.isLoggedIn()) {
+    return await Auth.authGet(endpoint);
+  } else if (token) {
+    // Fallback to manual fetch with token headers
+    const response = await fetch(endpoint, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } else {
+    throw new Error('Authentication not available');
+  }
+};
+
+// Helper to check if authentication is available
+const isAuthAvailable = () => {
+  const Auth = window.Auth;
+  const token = getTokenFromStorage();
+  
+  return (Auth && Auth.isLoggedIn()) || token !== null;
+};
+
 export const sourceBinderApi = {
   /**
    * Fetch all source binders from the backend
    * @returns Promise<SourceBinder[]> Normalized list of source binders
    */
   getSourceBinders: async () => {
-    const Auth = window.Auth;
-    
-    if (!Auth) {
+    if (!isAuthAvailable()) {
       handleAuthError(new Error('Authentication not available'), 'getSourceBinders');
-    }
-
-    if (!Auth.isLoggedIn()) {
-      handleAuthError(new Error('Not authenticated'), 'getSourceBinders');
     }
 
     try {
@@ -46,7 +111,7 @@ export const sourceBinderApi = {
       // Import the utilities dynamically to avoid circular dependency
       const { normalizeSourceBinders } = await import('../../../utils/sourceBinderUtils');
       
-      const rawData = await Auth.authGet(endpoint);
+      const rawData = await authGet(endpoint);
       console.log('✅ Source binders loaded (raw):', rawData);
       
       // Normalize the backend BinderInfo data
@@ -73,14 +138,8 @@ export const sourceBinderApi = {
    * @returns Promise<SourceBinder> Normalized source binder details
    */
   getSourceBinderById: async (id) => {
-    const Auth = window.Auth;
-    
-    if (!Auth) {
+    if (!isAuthAvailable()) {
       handleAuthError(new Error('Authentication not available'), 'getSourceBinderById');
-    }
-
-    if (!Auth.isLoggedIn()) {
-      handleAuthError(new Error('Not authenticated'), 'getSourceBinderById');
     }
 
     try {
@@ -90,7 +149,7 @@ export const sourceBinderApi = {
       // Import the utilities dynamically to avoid circular dependency
       const { normalizeSourceBinder } = await import('../../../utils/sourceBinderUtils');
       
-      const rawData = await Auth.authGet(endpoint);
+      const rawData = await authGet(endpoint);
       console.log('✅ Source binder details loaded (raw):', rawData);
       
       // Normalize the backend BinderInfo data
@@ -238,24 +297,18 @@ export const sourceBinderApi = {
    * @returns Promise<SourcePage[]> Normalized source pages list
    */
   getSourceBinderPages: async (id) => {
-    const Auth = window.Auth;
-    
-    if (!Auth) {
+    if (!isAuthAvailable()) {
       handleAuthError(new Error('Authentication not available'), 'getSourceBinderPages');
     }
 
-    if (!Auth.isLoggedIn()) {
-      handleAuthError(new Error('Not authenticated'), 'getSourceBinderPages');
-    }
-
     try {
-      const endpoint = getApiUrl(`/api/v1/source/GetBinderPages/${id}`);
+      const endpoint = getApiUrl(`/api/v1/source/GetBinderPages/${id}?simple=true&onlyActive=false`);
       console.log('📡 Fetching source binder pages from:', endpoint);
       
       // Import the utilities dynamically to avoid circular dependency
       const { normalizeSourcePages } = await import('../../../utils/sourceBinderUtils');
       
-      const rawData = await Auth.authGet(endpoint);
+      const rawData = await authGet(endpoint);
       console.log('✅ Source binder pages loaded (raw):', rawData);
       
       // Normalize the backend PageInfo data

@@ -10,7 +10,8 @@ import Login from './components/Login.jsx';
 import Dashboard from './components/Dashboard.jsx';
 import ApiExplorer from './components/ApiExplorer.jsx';
 import AuthDebug from './components/AuthDebug.jsx';
-import { SourceBinderList, SourceBinderListPage, SourceBinderDetailsPage } from './features/source_binder';
+import ServerError from './components/ServerError.jsx';
+import { SourceBinderList, SourceBinderListPage, SourceBinderDetailsPage, SourcePageDetailsPage } from './features/source_binder';
 import './App.css';
 
 // Create Material-UI theme
@@ -70,7 +71,7 @@ function AppContent() {
   return (
     <div className="App">
       {user && <Navbar />}
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+      <Container maxWidth={false} sx={{ mt: 4, mb: 4, px: 1 }}>
         <Routes>
           <Route 
             path="/login" 
@@ -101,6 +102,14 @@ function AppContent() {
             } 
           />
           <Route 
+            path="/source-binders/:id/pages/:pageId" 
+            element={
+              <AuthGuard>
+                <SourcePageDetailsPage />
+              </AuthGuard>
+            } 
+          />
+          <Route 
             path="/api-explorer" 
             element={
               <AuthGuard>
@@ -114,8 +123,9 @@ function AppContent() {
           />
         </Routes>
       </Container>
-      {/* Temporary debug component */}
+      {/* Debug and error components */}
       <AuthDebug />
+      <ServerError />
     </div>
   );
 }

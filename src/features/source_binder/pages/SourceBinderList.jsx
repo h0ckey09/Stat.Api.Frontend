@@ -9,7 +9,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { useSourceBinders } from '../hooks/useSourceBinders';
+import { useSourceBinders } from '../hooks/useSourceBinders.ts';
 import SourceBinderTable from '../components/SourceBinderTable.jsx';
 
 /**

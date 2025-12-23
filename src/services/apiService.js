@@ -31,7 +31,11 @@ api.interceptors.request.use(
 
 // Add response interceptor to handle errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Dispatch event to signal server is responsive
+    window.dispatchEvent(new CustomEvent('serverResponse'));
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
       console.warn('🚨 API returned 401 - authentication failed');

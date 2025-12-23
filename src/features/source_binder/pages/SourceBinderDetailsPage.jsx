@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -32,6 +32,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useParams, Link as RouterLink } from 'react-router-dom';
 import { useSourceBinder, useSourcePages } from '../hooks/useSourceBinders.ts';
+import AddPageDialog from '../components/AddPageDialog.jsx';
 import { 
   formatDate, 
   getStatusDisplay, 
@@ -42,6 +43,7 @@ import {
 const SourceBinderDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [addPageDialogOpen, setAddPageDialogOpen] = useState(false);
   
   const {
     sourceBinder,
@@ -60,13 +62,36 @@ const SourceBinderDetailsPage = () => {
     clearError: clearPagesError
   } = useSourcePages(id);
 
-  // Load data on component mount
+  // Track if initial data has been loaded to prevent multiple calls
+  const loadingRef = useRef(false);
+  const lastLoadedId = useRef(null);
+
+  // Load data on component mount or when ID changes
   useEffect(() => {
-    if (id) {
-      loadSourceBinder();
-      loadSourcePages();
+    // Skip if already loading or already loaded this ID
+    if (loadingRef.current || lastLoadedId.current === id) {
+      console.log('⏩ Skipping duplicate load for binder ID:', id);
+      return;
     }
-  }, [id, loadSourceBinder, loadSourcePages]);
+    
+    if (!id) return;
+    
+    const loadData = async () => {
+      loadingRef.current = true;
+      lastLoadedId.current = id;
+      
+      try {
+        await Promise.all([
+          loadSourceBinder(),
+          loadSourcePages()
+        ]);
+      } finally {
+        loadingRef.current = false;
+      }
+    };
+    
+    loadData();
+  }, [id]);
 
   const handleBack = () => {
     navigate('/source-binders');
@@ -82,7 +107,19 @@ const SourceBinderDetailsPage = () => {
   };
 
   const handleAddPage = () => {
-    navigate(`/source-binders/${id}/pages/new`);
+    setAddPageDialogOpen(true);
+  };
+
+  const handleAddPageSubmit = async (pageData) => {
+    try {
+      const { sourcePageApi } = await import('../../source_page/services/sourcePageApi');
+      await sourcePageApi.createSourcePage(pageData);
+      setAddPageDialogOpen(false);
+      loadSourcePages(); // Refresh the page list
+    } catch (error) {
+      console.error('Failed to create page:', error);
+      // Error will be shown in the dialog
+    }
   };
 
   const handleViewPage = (page) => {
@@ -305,17 +342,6 @@ const SourceBinderDetailsPage = () => {
                   </Typography>
                 </Box>
                 
-                {sourceBinder?.url && (
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      URL
-                    </Typography>
-                    <Typography variant="body1" sx={{ wordBreak: 'break-word' }}>
-                      {sourceBinder.url}
-                    </Typography>
-                  </Box>
-                )}
-                
                 {sourceBinder?.tags && sourceBinder.tags.length > 0 && (
                   <Box>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
@@ -444,11 +470,9 @@ const SourceBinderDetailsPage = () => {
                   <Table>
                     <TableHead>
                       <TableRow>
-                        <TableCell><strong>ID</strong></TableCell>
                         <TableCell><strong>Name</strong></TableCell>
-                        <TableCell><strong>URL</strong></TableCell>
                         <TableCell><strong>Status</strong></TableCell>
-                        <TableCell><strong>Last Scraped</strong></TableCell>
+                        <TableCell><strong>Version</strong></TableCell>
                         <TableCell align="center"><strong>Actions</strong></TableCell>
                       </TableRow>
                     </TableHead>
@@ -465,18 +489,8 @@ const SourceBinderDetailsPage = () => {
                         sourcePages.map((page, index) => (
                           <TableRow key={page.id || index} hover>
                             <TableCell>
-                              <Typography variant="body2" fontFamily="monospace">
-                                {page.id || 'N/A'}
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
                               <Typography variant="body1">
                                 {page.name || 'Unnamed Page'}
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Typography variant="body2" sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                {page.url || 'N/A'}
                               </Typography>
                             </TableCell>
                             <TableCell>
@@ -484,7 +498,7 @@ const SourceBinderDetailsPage = () => {
                             </TableCell>
                             <TableCell>
                               <Typography variant="body2">
-                                {formatDate(page.lastScrapedDate)}
+                                v. {page.version || -1}
                               </Typography>
                             </TableCell>
                             <TableCell align="center">
@@ -496,15 +510,6 @@ const SourceBinderDetailsPage = () => {
                                     onClick={() => handleViewPage(page)}
                                   >
                                     <ViewIcon />
-                                  </IconButton>
-                                </Tooltip>
-                                <Tooltip title="Edit Page">
-                                  <IconButton
-                                    size="small"
-                                    color="secondary"
-                                    onClick={() => handleEditPage(page)}
-                                  >
-                                    <EditIcon />
                                   </IconButton>
                                 </Tooltip>
                               </Box>
@@ -520,6 +525,15 @@ const SourceBinderDetailsPage = () => {
           </Card>
         </Grid>
       </Grid>
+
+      {/* Add Page Dialog */}
+      <AddPageDialog
+        open={addPageDialogOpen}
+        onClose={() => setAddPageDialogOpen(false)}
+        onAdd={handleAddPageSubmit}
+        binderId={id}
+        studyId={sourceBinder?.study?.Id || sourceBinder?.study?.id}
+      />
     </Box>
   );
 };
